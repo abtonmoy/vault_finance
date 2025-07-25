@@ -1,6 +1,3 @@
-
-
-
 import streamlit as st
 from interfaces import main_ui
 from interfaces import review_ui
@@ -11,7 +8,7 @@ def main():
     if 'transactions_df' not in st.session_state:
         st.session_state['transactions_df'] = None
         
-    tab1, tab2, tab3 = st.tabs(["📄 Upload & Analyze", "🎯 Review Categories", "🔧 Custom Rules"])
+    tab1, tab2, tab3,tab4 = st.tabs(["📄 Upload & Analyze", "🎯 Review Categories", "🔧 Custom Rules", "Investment Tracker"])
     
     with tab1:
         main_ui.main_ui()
