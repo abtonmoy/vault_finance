@@ -16,7 +16,7 @@ def show_file_summary(df):
     }).round(2)
     summary.columns = ['Transaction Count', 'Total Amount', 'Start Date', 'End Date']
     
-    # Create visual cards for each file
+    # Create visual cards for each file using theme colors
     files = summary.index.tolist()
     cols = st.columns(min(len(files), 3))
     
@@ -29,12 +29,14 @@ def show_file_summary(df):
             
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: hsl(207, 90%, 54%);
+                background: linear-gradient(135deg, hsl(207, 90%, 54%) 0%, hsl(262, 83%, 58%) 100%);
                 padding: 1rem;
-                border-radius: 10px;
-                color: white;
+                border-radius: 0.5rem;
+                color: hsl(211, 100%, 99%);
                 margin-bottom: 1rem;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 4px 6px hsla(20, 14.3%, 4.1%, 0.1);
+                animation: fade-in 0.3s ease-out;
             ">
                 <h4 style="margin: 0; font-size: 0.9rem;">{file[:20]}...</h4>
                 <p style="margin: 0.5rem 0; font-size: 1.2rem; font-weight: bold;">{count} transactions</p>
@@ -49,7 +51,7 @@ def show_enhanced_metrics(df):
     
     # Calculate metrics
     income_mask = (df['category'] == 'Income')
-    total_income = df[income_mask & (df['amount'] > 0)]['amount'].sum()
+    total_income = df[df['amount'] > 0]['amount'].sum()
     
     expense_mask = (df['category'] != 'Transfer') & (df['category'] != 'Income')
     total_expenses = abs(df[expense_mask & (df['amount'] < 0)]['amount'].sum())
@@ -64,30 +66,43 @@ def show_enhanced_metrics(df):
     days_span = (df['date'].max() - df['date'].min()).days if 'date' in df.columns else 0
     daily_avg_spending = total_expenses / max(days_span, 1) if days_span > 0 else 0
     
-    # Create metric cards with better styling
+    # Create metric cards with theme colors
     col1, col2, col3, col4 = st.columns(4)
     
-    metrics = [
-        ("Total Income", total_income, "🔼", "#28a745"),
-        ("Total Expenses", total_expenses, "🔻", "#dc3545"),
-        ("Net Income", net_income, "💰", "#28a745" if net_income > 0 else "#dc3545"),
-        ("Daily Avg Spend", daily_avg_spending, "📊", "#17a2b8")
+    # Theme-based colors
+    colors = [
+        ("hsl(142, 76%, 36%)", "📈"),  # Green for income
+        ("hsl(0, 84.2%, 60.2%)", "📉"),  # Red for expenses  
+        ("hsl(142, 76%, 36%)" if net_income > 0 else "hsl(0, 84.2%, 60.2%)", "💰"),  # Conditional
+        ("hsl(207, 90%, 54%)", "📊")  # Blue for daily avg
     ]
     
-    for i, (label, value, icon, color) in enumerate(metrics):
-        with [col1, col2, col3, col4][i]:
+    metrics = [
+        ("Total Income", total_income),
+        ("Total Expenses", total_expenses),
+        ("Net Income", net_income),
+        ("Daily Avg Spend", daily_avg_spending)
+    ]
+    
+    columns = [col1, col2, col3, col4]
+    
+    for i, ((label, value), (color, icon)) in enumerate(zip(metrics, colors)):
+        with columns[i]:
             st.markdown(f"""
             <div style="
-                background: white;
+                background: linear-gradient(135deg, {color} 0%, {color}88 100%);
                 padding: 1.5rem;
-                border-radius: 10px;
-                border-left: 4px solid {color};
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                border-radius: 12px;
+                color: white;
                 text-align: center;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                border: 1px solid rgba(255,255,255,0.1);
+                backdrop-filter: blur(10px);
+                transition: transform 0.2s ease;
             ">
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">{icon}</div>
-                <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">{label}</div>
-                <div style="font-size: 1.5rem; font-weight: bold; color: {color};">${value:,.2f}</div>
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">{icon}</div>
+                <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.5rem; font-weight: 500;">{label}</div>
+                <div style="font-size: 1.8rem; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">${value:,.2f}</div>
             </div>
             """, unsafe_allow_html=True)
     
@@ -206,7 +221,7 @@ def show_enhanced_spending_overview(df):
     st.plotly_chart(fig, use_container_width=True)
 
 def show_advanced_monthly_analysis(df):
-    """Advanced monthly analysis with income/expense/net tracking"""
+    """Advanced monthly analysis with income/expense/net tracking using theme colors"""
     st.markdown("### 📈 Monthly Financial Analysis")
     
     if 'date' not in df.columns or df['date'].isna().all():
@@ -242,13 +257,17 @@ def show_advanced_monthly_analysis(df):
         specs=[[{"secondary_y": False}], [{"secondary_y": True}]]
     )
     
+    # Theme colors
+    income_color = '#22c55e'  # Green from theme
+    expense_color = '#ef4444'  # Red from theme
+    
     # Income/Expense bars
     fig.add_trace(
         go.Bar(
             x=all_months,
             y=income_values,
             name='Income',
-            marker_color='#27ae60',
+            marker_color=income_color,
             opacity=0.8,
             hovertemplate="<b>Income</b><br>Month: %{x}<br>Amount: $%{y:,.2f}<extra></extra>"
         ),
@@ -260,15 +279,15 @@ def show_advanced_monthly_analysis(df):
             x=all_months,
             y=expense_values,
             name='Expenses',
-            marker_color='#e74c3c',
+            marker_color=expense_color,
             opacity=0.8,
             hovertemplate="<b>Expenses</b><br>Month: %{x}<br>Amount: $%{y:,.2f}<extra></extra>"
         ),
         row=1, col=1
     )
     
-    # Net income line
-    colors = ['#27ae60' if x >= 0 else '#e74c3c' for x in net_values]
+    # Net income bars with conditional colors
+    colors = [income_color if x >= 0 else expense_color for x in net_values]
     
     fig.add_trace(
         go.Bar(
@@ -293,7 +312,7 @@ def show_advanced_monthly_analysis(df):
                 y=trend_line,
                 mode='lines',
                 name='Trend',
-                line=dict(color='#f39c12', width=3, dash='dash'),
+                line=dict(color='#eab308', width=3, dash='dash'),  # Yellow from theme
                 hovertemplate="Trend: $%{y:,.2f}<extra></extra>"
             ),
             row=2, col=1
@@ -303,7 +322,10 @@ def show_advanced_monthly_analysis(df):
         height=700,
         title_text="Monthly Financial Trends",
         title_x=0.5,
-        showlegend=True
+        showlegend=True,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='hsl(20, 14.3%, 4.1%)')
     )
     
     fig.update_xaxes(title_text="Month", row=2, col=1)

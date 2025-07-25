@@ -4,6 +4,7 @@ from datetime import datetime
 from core.categorizer import TransactionCategorizer
 from core.parser import parse_pdf_statement, create_transaction_type_summary
 from utils.visualizations import show_all_enhanced_visualizations
+from utils.vis  import show_sankey_flow_diagram, show_enhanced_transaction_table
 
 # Modern theme system using CSS variables
 def load_custom_css():
@@ -626,14 +627,17 @@ def show_success_summary(df):
     # Quick overview
     col1, col2, col3, col4 = st.columns(4)
     
-    income = df[df['amount'] > 0]['amount'].sum()
-    expenses = abs(df[df['amount'] < 0]['amount'].sum())
+    income_mask = (df['category'] == 'Income')
+    # total_income = df[income_mask & (df['amount'] > 0)]['amount'].sum()
+    total_income = df[df['amount'] > 0]['amount'].sum()
+    expense_mask = (df['category'] != 'Transfer') & (df['category'] != 'Income')
+    total_expenses = abs(df[expense_mask & (df['amount'] < 0)]['amount'].sum())
     categories = df['category'].nunique()
     files = df['source_file'].nunique() if 'source_file' in df.columns else 1
     
     metrics = [
-        ("💰", "Total Income", f"${income:,.2f}"),
-        ("💸", "Total Expenses", f"${expenses:,.2f}"),
+        ("💰", "Total Income", f"${total_income:,.2f}"),
+        ("💸", "Total Expenses", f"${total_expenses:,.2f}"),
         ("📂", "Categories", f"{categories}"),
         ("📄", "Files Processed", f"{files}")
     ]
@@ -707,6 +711,10 @@ def main_ui():
             
             # Show all enhanced visualizations
             show_all_enhanced_visualizations(df, uploaded_files)
+
+            # sankey diagram
+            show_sankey_flow_diagram(df)
+            show_enhanced_transaction_table(df, uploaded_files)
             
             # Export section
             st.markdown("""

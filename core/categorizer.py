@@ -124,7 +124,7 @@ class TransactionCategorizer:
             'cc payment'
         ]
         if amount < 0 and any(kw in desc_lower for kw in credit_card_keywords):
-            return 'Bills and Utilities'
+            return 'Bills & Utilities'
 
         # Step 4: Handle transfers
         transfer_keywords = ['transfer', 'zelle', 'venmo', 'cash app', 'paypal transfer']

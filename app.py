@@ -12,7 +12,8 @@ def main():
     
     with tab1:
         main_ui.main_ui()
-    
+
+   
     with tab2:
         if st.session_state['transactions_df'] is not None:
             df = st.session_state['transactions_df']
@@ -22,6 +23,9 @@ def main():
     with tab3:
         rules_ui.create_custom_rules_interface()
         # kf
+
+    with tab4:
+        pass
 
 if __name__ == "__main__":
     main()
