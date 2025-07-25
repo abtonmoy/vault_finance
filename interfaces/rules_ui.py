@@ -1,5 +1,5 @@
 import streamlit as st
-from config import categories
+from config.categories import SPENDING_CATEGORIES
 
 def create_custom_rules_interface():
     """Interface for creating custom categorization rules"""
@@ -17,7 +17,7 @@ def create_custom_rules_interface():
             )
         
         with col2:
-            categories = list(categories.SPENDING_CATEGORIES.keys())
+            categories = list(SPENDING_CATEGORIES.keys())
             selected_category = st.selectbox("Category:", categories)
         
         if st.button("Add Rule") and pattern:

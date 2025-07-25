@@ -1,6 +1,6 @@
 import pandas as pd
 from typing import Dict, List
-from categorizer import TransactionCategorizer
+from core.categorizer import TransactionCategorizer
 
 def add_categorization_confidence(df: pd.DataFrame) -> pd.DataFrame:
     """Add confidence scores to categorization"""

@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from core import analyzer
+from core.analyzer import add_categorization_confidence, suggest_category_corrections
 
 def create_categorization_interface(df: pd.DataFrame) -> pd.DataFrame:
     """Create interactive interface for reviewing and correcting categorizations"""
@@ -8,7 +8,7 @@ def create_categorization_interface(df: pd.DataFrame) -> pd.DataFrame:
     st.subheader("🎯 Categorization Review & Correction")
     
     # Add confidence scores
-    df_with_confidence = analyzer.add_categorization_confidence(df)
+    df_with_confidence = add_categorization_confidence(df)
     
     # Show categorization statistics
     col1, col2, col3 = st.columns(3)
@@ -26,7 +26,7 @@ def create_categorization_interface(df: pd.DataFrame) -> pd.DataFrame:
         st.metric("Low Confidence", f"{low_conf}/{len(df)}")
     
     # Show suggestions for review
-    suggestions = analyzer.suggest_category_corrections(df_with_confidence)
+    suggestions = suggest_category_corrections(df_with_confidence)
     
     if suggestions:
         st.warning(f"⚠️ Found {len(suggestions)} transactions that might need review:")

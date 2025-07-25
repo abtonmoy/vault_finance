@@ -9,3 +9,7 @@ class TestParser(unittest.TestCase):
     def test_clean_amount(self):
         self.assertEqual(clean_amount("$123.45"), 123.45)
         self.assertEqual(clean_amount("(123.45)"), -123.45)
+
+
+if __name__ == "__main__":
+    unittest.main()

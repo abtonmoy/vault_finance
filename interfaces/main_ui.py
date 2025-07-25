@@ -1,11 +1,13 @@
-import sys
-import os
+# import sys
+# import os
 
-sys.path.append(os.path.abspath("../"))
+# sys.path.append(os.path.abspath("../"))
 import streamlit as st
 import pandas as pd
-from core.parser import parse_pdf_statement
 # from core.parser import parse_pdf_statement
+
+from core.categorizer import TransactionCategorizer
+from core.parser import parse_pdf_statement
 from utils.visualizations import (
     show_file_summary,
     show_metrics,
@@ -17,8 +19,9 @@ from utils.visualizations import (
     show_summary_statistics
 )
 
+
 def main_ui():
-    st.title("💰 Enhanced Bank Statement Analyzer")
+    st.title("Bank Statement Analyzer")
     st.markdown("Upload your bank statement PDF files to analyze spending with improved AI-powered categorization.")
     
     # Initialize session state

@@ -4,6 +4,7 @@ from datetime import datetime
 from fuzzywuzzy import fuzz
 from config import categories
 from typing import Dict, List, Optional
+from config.patterns import MERCHANT_PATTERNS
 
 class TransactionCategorizer:
     def __init__(self):
@@ -28,7 +29,7 @@ class TransactionCategorizer:
         """Normalize merchant names using regex patterns"""
         description = description.strip()
         
-        for pattern, replacement in pattern.MERCHANT_PATTERNS.items():
+        for pattern, replacement in MERCHANT_PATTERNS.items():
             description = re.sub(pattern, replacement, description, flags=re.IGNORECASE)
         
         # Remove common prefixes/suffixes
@@ -170,3 +171,8 @@ class TransactionCategorizer:
             return max(category_scores.items(), key=lambda x: x[1])[0]
         
         return 'Other'
+    
+def categorize_transaction(description: str, amount: float, date: datetime = None) -> str:
+    """Enhanced transaction categorization"""
+    categorizer = TransactionCategorizer()
+    return categorizer.multi_pass_categorization(description, amount, date)
