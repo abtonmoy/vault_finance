@@ -6,372 +6,11 @@ from core.parser import parse_pdf_statement, create_transaction_type_summary
 from utils.visualizations import show_all_enhanced_visualizations
 from utils.vis  import show_sankey_flow_diagram, show_enhanced_transaction_table
 
-# Modern theme system using CSS variables
-def load_custom_css():
-    st.markdown("""
-    <style>
-    /* Import the theme variables */
-    :root {
-      --background: hsl(0, 0%, 100%);
-      --foreground: hsl(20, 14.3%, 4.1%);
-      --muted: hsl(60, 4.8%, 95.9%);
-      --muted-foreground: hsl(25, 5.3%, 44.7%);
-      --popover: hsl(0, 0%, 100%);
-      --popover-foreground: hsl(20, 14.3%, 4.1%);
-      --card: hsl(0, 0%, 100%);
-      --card-foreground: hsl(20, 14.3%, 4.1%);
-      --border: hsl(20, 5.9%, 90%);
-      --input: hsl(20, 5.9%, 90%);
-      --primary: hsl(207, 90%, 54%);
-      --primary-foreground: hsl(211, 100%, 99%);
-      --secondary: hsl(60, 4.8%, 95.9%);
-      --secondary-foreground: hsl(24, 9.8%, 10%);
-      --accent: hsl(60, 4.8%, 95.9%);
-      --accent-foreground: hsl(24, 9.8%, 10%);
-      --destructive: hsl(0, 84.2%, 60.2%);
-      --destructive-foreground: hsl(60, 9.1%, 97.8%);
-      --ring: hsl(20, 14.3%, 4.1%);
-      --radius: 0.5rem;
-      --chart-1: hsl(207, 90%, 54%);
-      --chart-2: hsl(142, 76%, 36%);
-      --chart-3: hsl(45, 93%, 47%);
-      --chart-4: hsl(262, 83%, 58%);
-      --chart-5: hsl(12, 76%, 61%);
-      --sidebar-background: hsl(0, 0%, 98%);
-      --sidebar-foreground: hsl(20, 14.3%, 4.1%);
-      --sidebar-primary: hsl(207, 90%, 54%);
-      --sidebar-primary-foreground: hsl(211, 100%, 99%);
-      --sidebar-accent: hsl(60, 4.8%, 95.9%);
-      --sidebar-accent-foreground: hsl(24, 9.8%, 10%);
-      --sidebar-border: hsl(20, 5.9%, 90%);
-      --sidebar-ring: hsl(20, 14.3%, 4.1%);
-    }
-
-    .dark {
-      --background: hsl(240, 10%, 3.9%);
-      --foreground: hsl(0, 0%, 98%);
-      --muted: hsl(240, 3.7%, 15.9%);
-      --muted-foreground: hsl(240, 5%, 64.9%);
-      --popover: hsl(240, 10%, 3.9%);
-      --popover-foreground: hsl(0, 0%, 98%);
-      --card: hsl(240, 10%, 3.9%);
-      --card-foreground: hsl(0, 0%, 98%);
-      --border: hsl(240, 3.7%, 15.9%);
-      --input: hsl(240, 3.7%, 15.9%);
-      --primary: hsl(207, 90%, 54%);
-      --primary-foreground: hsl(211, 100%, 99%);
-      --secondary: hsl(240, 3.7%, 15.9%);
-      --secondary-foreground: hsl(0, 0%, 98%);
-      --accent: hsl(240, 3.7%, 15.9%);
-      --accent-foreground: hsl(0, 0%, 98%);
-      --destructive: hsl(0, 62.8%, 30.6%);
-      --destructive-foreground: hsl(0, 0%, 98%);
-      --ring: hsl(240, 4.9%, 83.9%);
-      --chart-1: hsl(207, 90%, 54%);
-      --chart-2: hsl(142, 76%, 36%);
-      --chart-3: hsl(45, 93%, 47%);
-      --chart-4: hsl(262, 83%, 58%);
-      --chart-5: hsl(12, 76%, 61%);
-      --sidebar-background: hsl(240, 5.9%, 10%);
-      --sidebar-foreground: hsl(0, 0%, 98%);
-      --sidebar-primary: hsl(207, 90%, 54%);
-      --sidebar-primary-foreground: hsl(211, 100%, 99%);
-      --sidebar-accent: hsl(240, 3.7%, 15.9%);
-      --sidebar-accent-foreground: hsl(0, 0%, 98%);
-      --sidebar-border: hsl(240, 3.7%, 15.9%);
-      --sidebar-ring: hsl(240, 4.9%, 83.9%);
-    }
-
-    /* Main app styling */
-    .main .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-        background: hsl(var(--background));
-        color: hsl(var(--foreground));
-        transition: background-color 0.3s ease, color 0.3s ease;
-    }
-    
-    /* Header styling */
-    .main-header {
-        background: hsl(var(--primary));
-        background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--chart-4)) 100%);
-        padding: 2rem;
-        border-radius: var(--radius);
-        color: hsl(var(--primary-foreground));
-        text-align: center;
-        margin-bottom: 2rem;
-        box-shadow: 0 8px 32px hsl(var(--foreground) / 0.1);
-        animation: fade-in 0.3s ease-out;
-    }
-    
-    .main-header h1 {
-        margin: 0;
-        font-size: 2.5rem;
-        font-weight: 700;
-        text-shadow: 2px 2px 4px hsl(var(--foreground) / 0.2);
-    }
-    
-    .main-header p {
-        margin: 1rem 0 0 0;
-        font-size: 1.1rem;
-        opacity: 0.9;
-    }
-    
-    /* Feature cards */
-    .feature-card {
-        background: hsl(var(--card));
-        color: hsl(var(--card-foreground));
-        padding: 1.5rem;
-        border-radius: var(--radius);
-        border: 1px solid hsl(var(--border));
-        border-left: 4px solid hsl(var(--primary));
-        box-shadow: 0 4px 6px hsl(var(--foreground) / 0.1);
-        margin-bottom: 1rem;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        animation: fade-in 0.3s ease-out;
-    }
-    
-    .feature-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px hsl(var(--foreground) / 0.15);
-    }
-    
-    .feature-card h3 {
-        color: hsl(var(--primary));
-        margin-bottom: 0.5rem;
-    }
-    
-    .feature-card ul {
-        color: hsl(var(--muted-foreground));
-        font-size: 0.9rem;
-    }
-    
-    /* Success/error styling */
-    .success-box {
-        background: hsl(var(--chart-2));
-        background: linear-gradient(135deg, hsl(var(--chart-2)) 0%, hsl(var(--chart-2) / 0.8) 100%);
-        color: hsl(var(--primary-foreground));
-        padding: 1rem;
-        border-radius: var(--radius);
-        margin: 1rem 0;
-        box-shadow: 0 4px 6px hsl(var(--foreground) / 0.1);
-        animation: fade-in 0.3s ease-out;
-    }
-    
-    .error-box {
-        background: hsl(var(--destructive));
-        background: linear-gradient(135deg, hsl(var(--destructive)) 0%, hsl(var(--destructive) / 0.8) 100%);
-        color: hsl(var(--destructive-foreground));
-        padding: 1rem;
-        border-radius: var(--radius);
-        margin: 1rem 0;
-        box-shadow: 0 4px 6px hsl(var(--foreground) / 0.1);
-        animation: fade-in 0.3s ease-out;
-    }
-    
-    /* Upload area styling */
-    .upload-area {
-        border: 2px dashed hsl(var(--primary));
-        border-radius: var(--radius);
-        padding: 2rem;
-        text-align: center;
-        background: hsl(var(--muted));
-        margin: 1rem 0;
-        transition: all 0.2s ease;
-    }
-    
-    .upload-area:hover {
-        background: hsl(var(--accent));
-        border-color: hsl(var(--primary) / 0.8);
-    }
-    
-    /* Sidebar styling */
-    .css-1d391kg {
-        background: hsl(var(--sidebar-background)) !important;
-        border-right: 1px solid hsl(var(--sidebar-border));
-    }
-    
-    /* Button styling */
-    .stButton > button {
-        background: hsl(var(--primary));
-        color: hsl(var(--primary-foreground));
-        border: 1px solid hsl(var(--primary));
-        border-radius: var(--radius);
-        padding: 0.5rem 1rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
-    }
-    
-    .stButton > button:hover {
-        background: hsl(var(--primary) / 0.9);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px hsl(var(--foreground) / 0.2);
-    }
-    
-    /* Metric cards */
-    .metric-card {
-        background: hsl(var(--card));
-        color: hsl(var(--card-foreground));
-        padding: 1.5rem;
-        border-radius: var(--radius);
-        text-align: center;
-        box-shadow: 0 4px 6px hsl(var(--foreground) / 0.1);
-        margin-bottom: 1rem;
-        border: 1px solid hsl(var(--border));
-        border-top: 4px solid hsl(var(--primary));
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        animation: fade-in 0.3s ease-out;
-    }
-    
-    .metric-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px hsl(var(--foreground) / 0.15);
-    }
-    
-    /* Section headers */
-    .section-header {
-        background: hsl(var(--primary));
-        background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--chart-4)) 100%);
-        color: hsl(var(--primary-foreground));
-        padding: 1rem 1.5rem;
-        border-radius: var(--radius);
-        margin: 2rem 0 1rem 0;
-        font-size: 1.3rem;
-        font-weight: 600;
-        box-shadow: 0 4px 6px hsl(var(--foreground) / 0.1);
-        animation: fade-in 0.3s ease-out;
-    }
-    
-    /* File info styling */
-    .file-info {
-        background: hsl(var(--chart-1));
-        background: linear-gradient(135deg, hsl(var(--chart-1)) 0%, hsl(var(--chart-1) / 0.8) 100%);
-        color: hsl(var(--primary-foreground));
-        padding: 1rem;
-        border-radius: var(--radius);
-        margin: 0.5rem 0;
-        box-shadow: 0 2px 4px hsl(var(--foreground) / 0.1);
-        animation: fade-in 0.3s ease-out;
-    }
-    
-    /* Progress indicators */
-    .progress-step {
-        display: inline-block;
-        background: hsl(var(--primary));
-        color: hsl(var(--primary-foreground));
-        padding: 0.5rem 1rem;
-        border-radius: 1rem;
-        margin: 0.25rem;
-        font-size: 0.9rem;
-        font-weight: 500;
-        animation: fade-in 0.3s ease-out;
-    }
-    
-    /* Warning box */
-    .warning-box {
-        background: hsl(var(--chart-3));
-        background: linear-gradient(135deg, hsl(var(--chart-3)) 0%, hsl(var(--chart-3) / 0.8) 100%);
-        color: hsl(var(--foreground));
-        padding: 1rem;
-        border-radius: var(--radius);
-        margin: 1rem 0;
-        box-shadow: 0 2px 4px hsl(var(--foreground) / 0.1);
-        animation: fade-in 0.3s ease-out;
-    }
-    
-    /* Chart containers */
-    .chart-container {
-        background: hsl(var(--card));
-        color: hsl(var(--card-foreground));
-        padding: 1rem;
-        border-radius: var(--radius);
-        border: 1px solid hsl(var(--border));
-        box-shadow: 0 4px 6px hsl(var(--foreground) / 0.05);
-        margin: 1rem 0;
-        animation: fade-in 0.3s ease-out;
-    }
-    
-    /* Financial styling */
-    .financial-positive {
-        color: hsl(var(--chart-2));
-        font-weight: 600;
-    }
-    
-    .financial-negative {
-        color: hsl(var(--destructive));
-        font-weight: 600;
-    }
-    
-    /* Custom animations */
-    @keyframes fade-in {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    /* Smooth transitions */
-    * {
-        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-    }
-    
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-        width: 6px;
-    }
-    
-    ::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-        background: hsl(var(--muted-foreground) / 0.3);
-        border-radius: 3px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-        background: hsl(var(--muted-foreground) / 0.5);
-    }
-    
-    /* Streamlit overrides */
-    .stSelectbox > div > div {
-        background: hsl(var(--input));
-        border: 1px solid hsl(var(--border));
-        border-radius: var(--radius);
-    }
-    
-    .stDateInput > div > div {
-        background: hsl(var(--input));
-        border: 1px solid hsl(var(--border));
-        border-radius: var(--radius);
-    }
-    
-    .stCheckbox > label {
-        color: hsl(var(--foreground));
-    }
-    
-    .stSlider > div > div > div {
-        background: hsl(var(--primary));
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
 def create_enhanced_deduplication_config():
     """Create enhanced UI for configuring deduplication settings"""
     
     st.sidebar.markdown("""
-    <div style="
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1rem;
-        border-radius: 10px;
-        color: white;
-        text-align: center;
-        margin-bottom: 1rem;
-    ">
+    <div class="settings-gradient">
         <h3 style="margin: 0;">🔧 Settings</h3>
     </div>
     """, unsafe_allow_html=True)
@@ -467,9 +106,9 @@ def show_welcome_screen():
     
     # Main header
     st.markdown("""
-    <div class="main-header">
-        <h1>💰 Smart Bank Statement Analyzer</h1>
-        <p>AI-powered transaction analysis with intelligent categorization and duplicate detection</p>
+    <div class="gradient-header">
+        <h1 style="margin: 0;">💰 Smart Bank Statement Analyzer</h1>
+        <p style="margin: 0.5rem 0 0 0;">AI-powered transaction analysis with intelligent categorization and duplicate detection</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -520,8 +159,8 @@ def show_welcome_screen():
     
     # Instructions
     st.markdown("""
-    <div class="section-header">
-        📋 How to Get Started
+    <div class="gradient-header">
+        <h3 style="margin: 0;">📋 How to Get Started</h3>
     </div>
     """, unsafe_allow_html=True)
     
@@ -576,8 +215,8 @@ def show_welcome_screen():
     
     # Upload area
     st.markdown("""
-    <div class="upload-area">
-        <h3>🎯 Ready to Start?</h3>
+    <div class="gradient-card" style="text-align: center; margin-top: 2rem;">
+        <h3 style="margin-top: 0;">🎯 Ready to Start?</h3>
         <p>Upload your bank statement PDF files below</p>
     </div>
     """, unsafe_allow_html=True)
@@ -586,8 +225,8 @@ def show_processing_progress(uploaded_files):
     """Show enhanced processing progress"""
     
     st.markdown("""
-    <div class="section-header">
-        🔄 Processing Your Files
+    <div class="gradient-header">
+        <h3 style="margin: 0;">🔄 Processing Your Files</h3>
     </div>
     """, unsafe_allow_html=True)
     
@@ -618,7 +257,7 @@ def show_success_summary(df):
         date_range = f" from {df['date'].min().strftime('%b %d, %Y')} to {df['date'].max().strftime('%b %d, %Y')}"
     
     st.markdown(f"""
-    <div class="success-box">
+    <div class="gradient-card">
         <h3 style="margin: 0;">✅ Processing Complete!</h3>
         <p style="margin: 0.5rem 0 0 0;">Successfully analyzed <strong>{total_transactions:,} transactions</strong>{date_range}</p>
     </div>
@@ -628,7 +267,6 @@ def show_success_summary(df):
     col1, col2, col3, col4 = st.columns(4)
     
     income_mask = (df['category'] == 'Income')
-    # total_income = df[income_mask & (df['amount'] > 0)]['amount'].sum()
     total_income = df[df['amount'] > 0]['amount'].sum()
     expense_mask = (df['category'] != 'Transfer') & (df['category'] != 'Income')
     total_expenses = abs(df[expense_mask & (df['amount'] < 0)]['amount'].sum())
@@ -645,10 +283,10 @@ def show_success_summary(df):
     for i, (icon, label, value) in enumerate(metrics):
         with [col1, col2, col3, col4][i]:
             st.markdown(f"""
-            <div class="metric-card">
+            <div class="gradient-metric">
                 <div style="font-size: 2rem; margin-bottom: 0.5rem;">{icon}</div>
-                <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.25rem;">{label}</div>
-                <div style="font-size: 1.3rem; font-weight: bold; color: #333;">{value}</div>
+                <div style="font-size: 0.9rem; margin-bottom: 0.25rem;">{label}</div>
+                <div style="font-size: 1.3rem; font-weight: bold;">{value}</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -662,9 +300,6 @@ def main_ui():
         layout="wide",
         initial_sidebar_state="expanded"
     )
-    
-    # Load custom CSS
-    load_custom_css()
     
     # Initialize session state
     if 'transactions_df' not in st.session_state:
@@ -688,7 +323,7 @@ def main_ui():
         # Warning for multiple files
         if len(uploaded_files) > 1:
             st.markdown("""
-            <div class="warning-box">
+            <div class="warning-gradient">
                 <strong>⚠️ Multiple Files Detected</strong><br>
                 The system will automatically detect and remove duplicates between files. 
                 Review deduplication settings in the sidebar if needed.
@@ -722,8 +357,8 @@ def main_ui():
             
             # Export section
             st.markdown("""
-            <div class="section-header">
-                💾 Export & Actions
+            <div class="gradient-header">
+                <h3 style="margin: 0;">💾 Export & Actions</h3>
             </div>
             """, unsafe_allow_html=True)
             
@@ -781,7 +416,7 @@ Top Spending Categories:
         else:
             # Enhanced error message
             st.markdown("""
-            <div class="error-box">
+            <div class="error-gradient">
                 <h3 style="margin: 0;">❌ Processing Failed</h3>
                 <p style="margin: 0.5rem 0 0 0;">No valid transactions could be extracted from the uploaded files.</p>
             </div>

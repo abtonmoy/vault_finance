@@ -4,33 +4,96 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 from utils import helpers
+from utils.theme import THEME_COLORS, THEME_GRADIENTS
+
+# Define a consistent color palette from theme
+CHART_COLORS = [
+    THEME_COLORS["lapis_lazuli"],
+    THEME_COLORS["midnight_green"], 
+    THEME_COLORS["pakistan_green"],
+    THEME_COLORS["dark_green"],
+    "#2E8B8B",  # Complementary teal
+    "#4A90A4",  # Complementary blue-gray
+    "#5B9279",  # Complementary green-gray
+    "#6B7A8F"   # Complementary gray-blue
+]
+
+# High contrast colors for scatter plots against dark backgrounds
+SCATTER_COLORS = [
+    "#FF6B6B",  # Bright coral red
+    "#4ECDC4",  # Bright teal
+    "#45B7D1",  # Bright blue
+    "#96CEB4",  # Mint green
+    "#FFEAA7",  # Light yellow
+    "#DDA0DD",  # Plum
+    "#98D8C8",  # Aquamarine
+    "#F7DC6F",  # Light gold
+    "#BB8FCE",  # Light purple
+    "#85C1E9",  # Light blue
+    "#F8C471",  # Light orange
+    "#82E0AA"   # Light green
+]
 
 def portfolio_allocation_chart(portfolio_df):
-    """Create a pie chart of portfolio allocation"""
+    """Create a modern pie chart of portfolio allocation"""
     if portfolio_df.empty or 'market_value' not in portfolio_df.columns:
         return None
     
     # Group by symbol for allocation
     allocation = portfolio_df.groupby('symbol')['market_value'].sum().reset_index()
     
+    # Calculate percentages to determine which labels to show
+    allocation['percentage'] = allocation['market_value'] / allocation['market_value'].sum() * 100
+    
     fig = px.pie(
         allocation,
         names='symbol',
         values='market_value',
         title='Portfolio Allocation by Holding',
-        hole=0.4
+        hole=0.5,
+        color_discrete_sequence=CHART_COLORS
     )
     
+    # Create custom text - only show labels for holdings > 3%
+    text_info = []
+    for i, row in allocation.iterrows():
+        if row['percentage'] > 3:
+            text_info.append(f"{row['symbol']}<br>{row['percentage']:.1f}%")
+        else:
+            text_info.append("")  # Empty string for small slices
+    
     fig.update_traces(
-        textposition='inside',
-        textinfo='percent+label',
-        hovertemplate="<b>%{label}</b><br>Value: $%{value:,.2f}<br>Percentage: %{percent}<extra></extra>"
+        textposition='outside',
+        text=text_info,
+        textinfo='text',
+        textfont=dict(size=11, color='white'),
+        hovertemplate="<b>%{label}</b><br>Value: $%{value:,.2f}<br>Percentage: %{percent}<extra></extra>",
+        marker=dict(line=dict(color='white', width=2))
+    )
+    
+    fig.update_layout(
+        paper_bgcolor=THEME_COLORS["dark_green"],
+        plot_bgcolor=THEME_COLORS["dark_green"],
+        font=dict(color='white', size=12),
+        title=dict(
+            font=dict(size=18, color='white'),
+            x=0.5
+        ),
+        showlegend=True,
+        legend=dict(
+            orientation="v",
+            yanchor="middle",
+            y=0.5,
+            xanchor="left",
+            x=1.05,
+            font=dict(color='white')
+        )
     )
     
     return fig
 
 def gain_loss_waterfall(portfolio_df):
-    """Create waterfall chart of gains and losses"""
+    """Create modern waterfall chart of gains and losses"""
     if portfolio_df.empty or 'gain_loss' not in portfolio_df.columns:
         return None
     
@@ -43,16 +106,36 @@ def gain_loss_waterfall(portfolio_df):
         measure=["relative"] * len(sorted_df),
         x=sorted_df['symbol'],
         textposition="outside",
-        text=[f"${x:,.2f}" for x in sorted_df['gain_loss']],
+        text=[f"${x:,.0f}" for x in sorted_df['gain_loss']],
+        textfont=dict(color='white', size=11),
         y=sorted_df['gain_loss'],
-        connector={"line": {"color": "rgb(63, 63, 63)"}},
+        connector=dict(line=dict(color="rgba(255,255,255,0.3)", width=1)),
+        increasing=dict(marker=dict(color=THEME_COLORS["lapis_lazuli"])),
+        decreasing=dict(marker=dict(color=THEME_COLORS["rojo"])),
+        hovertemplate="<b>%{x}</b><br>Amount: $%{y:,.2f}<extra></extra>"
     ))
     
     fig.update_layout(
-        title="Gain/Loss by Holding",
+        title=dict(
+            text="Gain/Loss by Holding",
+            font=dict(size=18, color='white'),
+            x=0.5
+        ),
         showlegend=False,
-        yaxis_title="Amount ($)",
-        xaxis_title="Holding"
+        yaxis=dict(
+            title=dict(text="Amount ($)", font=dict(color='white')),
+            tickfont=dict(color='white'),
+            gridcolor="rgba(255,255,255,0.1)",
+            zerolinecolor="rgba(255,255,255,0.3)"
+        ),
+        xaxis=dict(
+            title=dict(text="Holding", font=dict(color='white')),
+            tickfont=dict(color='white'),
+            tickangle=45
+        ),
+        paper_bgcolor=THEME_COLORS["dark_green"],
+        plot_bgcolor=THEME_COLORS["dark_green"],
+        font=dict(color='white')
     )
     
     # Add overall performance line
@@ -60,28 +143,36 @@ def gain_loss_waterfall(portfolio_df):
     fig.add_hline(
         y=total_gain,
         line_dash="dash",
-        line_color="green" if total_gain >= 0 else "red",
+        line_color=THEME_COLORS["lapis_lazuli"] if total_gain >= 0 else THEME_COLORS["rojo"],
+        line_width=2,
         annotation_text=f"Total: ${total_gain:,.2f}",
-        annotation_position="bottom right"
+        annotation_position="top right",
+        annotation_font=dict(color='white', size=12)
     )
     
     return fig
 
 def historical_performance_chart(historical_values):
-    """Chart historical portfolio value over time"""
+    """Chart historical portfolio value over time with modern styling"""
     if historical_values.empty or 'total_value' not in historical_values.columns:
         return None
     
     # Ensure sorted by date
     historical = historical_values.sort_values('date')
     
-    fig = px.line(
-        historical,
-        x='date',
-        y='total_value',
-        title='Historical Portfolio Value',
-        labels={'total_value': 'Portfolio Value ($)'}
-    )
+    fig = go.Figure()
+    
+    # Main line
+    fig.add_trace(go.Scatter(
+        x=historical['date'],
+        y=historical['total_value'],
+        mode='lines',
+        name='Portfolio Value',
+        line=dict(color=THEME_COLORS["lapis_lazuli"], width=3),
+        fill='tonexty',
+        fillcolor=f"rgba({int(THEME_COLORS['lapis_lazuli'][1:3], 16)}, {int(THEME_COLORS['lapis_lazuli'][3:5], 16)}, {int(THEME_COLORS['lapis_lazuli'][5:7], 16)}, 0.1)",
+        hovertemplate="<b>Portfolio Value</b><br>Date: %{x}<br>Value: $%{y:,.2f}<extra></extra>"
+    ))
     
     # Add 30-day moving average if enough data
     if len(historical) > 30:
@@ -90,21 +181,44 @@ def historical_performance_chart(historical_values):
             x=historical['date'],
             y=historical['30_day_ma'],
             mode='lines',
-            name='30-Day MA',
-            line=dict(dash='dash')
+            name='30-Day Moving Average',
+            line=dict(color=THEME_COLORS["midnight_green"], width=2, dash='dash'),
+            hovertemplate="<b>30-Day MA</b><br>Date: %{x}<br>Value: $%{y:,.2f}<extra></extra>"
         ))
     
     fig.update_layout(
+        title=dict(
+            text='Historical Portfolio Value',
+            font=dict(size=18, color='white'),
+            x=0.5
+        ),
         hovermode='x unified',
-        xaxis_title='Date',
-        yaxis_title='Portfolio Value ($)',
-        showlegend=False
+        xaxis=dict(
+            title=dict(text='Date', font=dict(color='white')),
+            tickfont=dict(color='white'),
+            gridcolor="rgba(255,255,255,0.1)"
+        ),
+        yaxis=dict(
+            title=dict(text='Portfolio Value ($)', font=dict(color='white')),
+            tickfont=dict(color='white'),
+            gridcolor="rgba(255,255,255,0.1)"
+        ),
+        legend=dict(
+            font=dict(color='white'),
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
+        ),
+        paper_bgcolor=THEME_COLORS["dark_green"],
+        plot_bgcolor=THEME_COLORS["dark_green"],
+        font=dict(color='white')
     )
     
     return fig
 
 def sector_allocation_chart(portfolio_df):
-    """Create sunburst chart of sector allocation"""
+    """Create modern sunburst chart of sector allocation"""
     if portfolio_df.empty or 'sector' not in portfolio_df.columns:
         return None
     
@@ -115,18 +229,31 @@ def sector_allocation_chart(portfolio_df):
         sector_data,
         path=['sector', 'symbol'],
         values='market_value',
-        title='Sector Allocation'
+        title='Sector Allocation',
+        color_discrete_sequence=CHART_COLORS
     )
     
     fig.update_traces(
         textinfo='label+percent parent',
-        hovertemplate="<b>%{label}</b><br>Value: $%{value:,.2f}<br>Percentage: %{percentParent}<extra></extra>"
+        textfont=dict(color='white', size=11),
+        hovertemplate="<b>%{label}</b><br>Value: $%{value:,.2f}<br>Percentage: %{percentParent}<extra></extra>",
+        marker=dict(line=dict(color='white', width=1))
+    )
+    
+    fig.update_layout(
+        title=dict(
+            font=dict(size=18, color='white'),
+            x=0.5
+        ),
+        paper_bgcolor=THEME_COLORS["dark_green"],
+        plot_bgcolor=THEME_COLORS["dark_green"],
+        font=dict(color='white')
     )
     
     return fig
 
 def risk_analysis_chart(portfolio_df):
-    """Visualize risk analysis through volatility"""
+    """Visualize risk analysis through volatility with modern styling"""
     if portfolio_df.empty or 'gain_loss_pct' not in portfolio_df.columns:
         return None
     
@@ -141,119 +268,179 @@ def risk_analysis_chart(portfolio_df):
         labels={
             'market_value': 'Current Value ($)',
             'gain_loss_pct': 'Gain/Loss (%)'
-        }
+        },
+        color_discrete_sequence=SCATTER_COLORS
     )
     
-    # Add quadrants
+    # Update marker properties for better visibility
+    fig.update_traces(
+        marker=dict(
+            line=dict(width=2, color='white'),  # White border around markers
+            opacity=0.8,
+            sizemin=8  # Minimum marker size
+        )
+    )
+    
+    # Add quadrant lines with better visibility
     max_value = portfolio_df['market_value'].max() * 1.1
     max_pct = portfolio_df['gain_loss_pct'].abs().max() * 1.1
+    median_value = portfolio_df['market_value'].median()
     
-    fig.add_hline(y=0, line_dash="dash", line_color="gray")
-    fig.add_vline(x=portfolio_df['market_value'].median(), line_dash="dash", line_color="gray")
+    fig.add_hline(
+        y=0, 
+        line_dash="dash", 
+        line_color="rgba(255,255,255,0.8)",  # More visible white line
+        line_width=2
+    )
+    fig.add_vline(
+        x=median_value, 
+        line_dash="dash", 
+        line_color="rgba(255,255,255,0.8)",  # More visible white line
+        line_width=2
+    )
     
     fig.update_layout(
-        shapes=[
-            # High value, high gain
-            dict(type="rect", x0=portfolio_df['market_value'].median(), y0=0, 
-                x1=max_value, y1=max_pct, fillcolor="green", opacity=0.1, layer="below"),
-            # High value, low gain
-            dict(type="rect", x0=portfolio_df['market_value'].median(), y0=-max_pct, 
-                x1=max_value, y1=0, fillcolor="red", opacity=0.1, layer="below"),
-            # Low value, high gain
-            dict(type="rect", x0=0, y0=0, 
-                x1=portfolio_df['market_value'].median(), y1=max_pct, fillcolor="lightgreen", opacity=0.1, layer="below"),
-            # Low value, low gain
-            dict(type="rect", x0=0, y0=-max_pct, 
-                x1=portfolio_df['market_value'].median(), y1=0, fillcolor="lightcoral", opacity=0.1, layer="below")
-        ],
-        annotations=[
-            dict(x=max_value*0.75, y=max_pct*0.75, text="High Value<br>High Gain", showarrow=False),
-            dict(x=max_value*0.75, y=-max_pct*0.75, text="High Value<br>Low Gain", showarrow=False),
-            dict(x=max_value*0.25, y=max_pct*0.75, text="Low Value<br>High Gain", showarrow=False),
-            dict(x=max_value*0.25, y=-max_pct*0.75, text="Low Value<br>Low Gain", showarrow=False)
-        ]
+        title=dict(
+            font=dict(size=18, color='white'),
+            x=0.5
+        ),
+        xaxis=dict(
+            title=dict(text='Current Value ($)', font=dict(color='white')),
+            tickfont=dict(color='white'),
+            gridcolor="rgba(255,255,255,0.1)"
+        ),
+        yaxis=dict(
+            title=dict(text='Gain/Loss (%)', font=dict(color='white')),
+            tickfont=dict(color='white'),
+            gridcolor="rgba(255,255,255,0.1)"
+        ),
+        legend=dict(
+            font=dict(color='white'),
+            yanchor="top",
+            y=0.99,
+            xanchor="right",
+            x=0.99
+        ),
+        paper_bgcolor=THEME_COLORS["dark_green"],
+        plot_bgcolor=THEME_COLORS["dark_green"],
+        font=dict(color='white')
     )
     
     return fig
 
 def capital_allocation_line(portfolio_df, risk_free_rate):
-    """Create Capital Allocation Line visualization"""
+    """Create modern Capital Allocation Line visualization"""
     if portfolio_df.empty or 'annualized_return' not in portfolio_df.columns or 'annualized_volatility' not in portfolio_df.columns:
         return None
     
-    # Create efficient frontier
+    # Create efficient frontier (simplified)
     portfolios = []
     for i in range(100):
         w = np.random.random(len(portfolio_df))
         w /= np.sum(w)
         
         port_return = np.sum(w * portfolio_df['annualized_return'])
-        port_volatility = np.sqrt(np.dot(w.T, np.dot(portfolio_df.cov(), w)))
+        port_volatility = np.sqrt(np.sum(w**2 * portfolio_df['annualized_volatility']**2))
         
         portfolios.append({
             'return': port_return,
             'volatility': port_volatility,
-            'sharpe': (port_return - risk_free_rate) / port_volatility
+            'sharpe': (port_return - risk_free_rate) / port_volatility if port_volatility > 0 else 0
         })
     
     portfolios_df = pd.DataFrame(portfolios)
     
-    # Create CAL
-    max_sharpe = portfolios_df.loc[portfolios_df['sharpe'].idxmax()]
-    cal_slope = (max_sharpe['return'] - risk_free_rate) / max_sharpe['volatility']
+    # Create figure
+    fig = go.Figure()
     
-    fig = px.scatter(
-        portfolios_df,
-        x='volatility',
-        y='return',
-        color='sharpe',
-        title='Capital Allocation Line (CAL)',
-        labels={
-            'volatility': 'Volatility (Risk)',
-            'return': 'Expected Return'
-        }
-    )
+    # Scatter plot of portfolios
+    fig.add_trace(go.Scatter(
+        x=portfolios_df['volatility'],
+        y=portfolios_df['return'],
+        mode='markers',
+        marker=dict(
+            color=portfolios_df['sharpe'],
+            colorscale=[[0, THEME_COLORS["rojo"]], [0.5, THEME_COLORS["midnight_green"]], [1, THEME_COLORS["lapis_lazuli"]]],
+            size=8,
+            opacity=0.7,
+            colorbar=dict(title="Sharpe Ratio", titlefont=dict(color='white'), tickfont=dict(color='white'))
+        ),
+        name='Efficient Frontier',
+        hovertemplate="<b>Portfolio</b><br>Volatility: %{x:.2%}<br>Return: %{y:.2%}<br>Sharpe: %{marker.color:.2f}<extra></extra>"
+    ))
     
     # Add CAL line
-    cal_x = np.linspace(0, portfolios_df['volatility'].max() * 1.2, 50)
-    cal_y = risk_free_rate + cal_slope * cal_x
-    
-    fig.add_trace(go.Scatter(
-        x=cal_x,
-        y=cal_y,
-        mode='lines',
-        name='Capital Allocation Line',
-        line=dict(color='red', dash='dash')
-    ))
-    
-    # Add risk-free rate point
-    fig.add_trace(go.Scatter(
-        x=[0],
-        y=[risk_free_rate],
-        mode='markers',
-        name='Risk-Free Rate',
-        marker=dict(color='green', size=10)
-    ))
-    
-    # Add tangent portfolio
-    fig.add_trace(go.Scatter(
-        x=[max_sharpe['volatility']],
-        y=[max_sharpe['return']],
-        mode='markers',
-        name='Optimal Portfolio',
-        marker=dict(color='blue', size=10)
-    ))
+    if not portfolios_df.empty:
+        max_sharpe_idx = portfolios_df['sharpe'].idxmax()
+        max_sharpe = portfolios_df.loc[max_sharpe_idx]
+        cal_slope = (max_sharpe['return'] - risk_free_rate) / max_sharpe['volatility']
+        
+        cal_x = np.linspace(0, portfolios_df['volatility'].max() * 1.2, 50)
+        cal_y = risk_free_rate + cal_slope * cal_x
+        
+        fig.add_trace(go.Scatter(
+            x=cal_x,
+            y=cal_y,
+            mode='lines',
+            name='Capital Allocation Line',
+            line=dict(color=THEME_COLORS["rojo"], width=3, dash='dash'),
+            hovertemplate="<b>CAL</b><br>Risk: %{x:.2%}<br>Return: %{y:.2%}<extra></extra>"
+        ))
+        
+        # Add risk-free rate point
+        fig.add_trace(go.Scatter(
+            x=[0],
+            y=[risk_free_rate],
+            mode='markers',
+            name='Risk-Free Rate',
+            marker=dict(color='white', size=12, symbol='star'),
+            hovertemplate="<b>Risk-Free Rate</b><br>Return: %{y:.2%}<extra></extra>"
+        ))
+        
+        # Add optimal portfolio
+        fig.add_trace(go.Scatter(
+            x=[max_sharpe['volatility']],
+            y=[max_sharpe['return']],
+            mode='markers',
+            name='Optimal Portfolio',
+            marker=dict(color=THEME_COLORS["lapis_lazuli"], size=12, symbol='diamond'),
+            hovertemplate="<b>Optimal Portfolio</b><br>Volatility: %{x:.2%}<br>Return: %{y:.2%}<extra></extra>"
+        ))
     
     fig.update_layout(
-        xaxis_title='Volatility (Standard Deviation)',
-        yaxis_title='Expected Return',
-        coloraxis_colorbar=dict(title='Sharpe Ratio')
+        title=dict(
+            text='Capital Allocation Line (CAL)',
+            font=dict(size=18, color='white'),
+            x=0.5
+        ),
+        xaxis=dict(
+            title=dict(text='Volatility (Standard Deviation)', font=dict(color='white')),
+            tickfont=dict(color='white'),
+            gridcolor="rgba(255,255,255,0.1)",
+            tickformat='.1%'
+        ),
+        yaxis=dict(
+            title=dict(text='Expected Return', font=dict(color='white')),
+            tickfont=dict(color='white'),
+            gridcolor="rgba(255,255,255,0.1)",
+            tickformat='.1%'
+        ),
+        legend=dict(
+            font=dict(color='white'),
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
+        ),
+        paper_bgcolor=THEME_COLORS["dark_green"],
+        plot_bgcolor=THEME_COLORS["dark_green"],
+        font=dict(color='white')
     )
     
     return fig
 
 def render_equity_visualizations(tracker):
-    """Render all equity visualizations in a dashboard"""
+    """Render all equity visualizations in a modern dashboard"""
     if tracker.portfolio.empty:
         return
     

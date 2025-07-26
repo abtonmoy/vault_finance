@@ -2,9 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from core.robinhood_parser import parse_investment_documents
-# from core.parser import parse_pdf_statement
 from utils.equity_vis import render_equity_visualizations
-from utils import helpers
 
 def show_investment_dashboard():
     """Main UI for investment tracking and analysis"""
@@ -30,7 +28,7 @@ def show_investment_dashboard():
     if uploaded_files:
         # Parse investment documents
         tracker = parse_investment_documents(uploaded_files, doc_type, brokerage)
-        # tracker = parse_pdf_statement(uploaded_files,doc_type)
+        
         if tracker and not tracker.portfolio.empty:
             # Portfolio summary metrics
             st.subheader("📊 Portfolio Summary")
@@ -45,30 +43,6 @@ def show_investment_dashboard():
             
             # Advanced metrics section
             st.subheader("📈 Advanced Portfolio Metrics")
-            st.markdown("""
-            <style>
-            .metric-box {
-                border: 1px solid #e0e0e0;
-                border-radius: 10px;
-                padding: 15px;
-                margin: 10px 0;
-                background-color: #f9f9f9;
-            }
-            .metric-title {
-                font-weight: bold;
-                font-size: 16px;
-                margin-bottom: 5px;
-            }
-            .metric-value {
-                font-size: 24px;
-                font-weight: bold;
-            }
-            .metric-sub {
-                font-size: 14px;
-                color: #666;
-            }
-            </style>
-            """, unsafe_allow_html=True)
             
             # Risk-free rate input
             tracker.risk_free_rate = st.slider(
@@ -87,56 +61,56 @@ def show_investment_dashboard():
                 
                 with col1:
                     st.markdown(f"""
-                    <div class="metric-box">
-                        <div class="metric-title">Sharpe Ratio</div>
-                        <div class="metric-value">{advanced_metrics['sharpe_ratio']:.2f}</div>
-                        <div class="metric-sub">Risk-adjusted return</div>
+                    <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; margin: 10px 0; background-color: white;">
+                        <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #333;">Sharpe Ratio</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #333;">{advanced_metrics['sharpe_ratio']:.2f}</div>
+                        <div style="font-size: 14px; color: #666;">Risk-adjusted return</div>
                     </div>
                     """, unsafe_allow_html=True)
                     
                 with col2:
                     st.markdown(f"""
-                    <div class="metric-box">
-                        <div class="metric-title">Annualized Return</div>
-                        <div class="metric-value">{advanced_metrics['annualized_return']*100:.2f}%</div>
-                        <div class="metric-sub">CAGR</div>
+                    <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; margin: 10px 0; background-color: white;">
+                        <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #333;">Annualized Return</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #333;">{advanced_metrics['annualized_return']*100:.2f}%</div>
+                        <div style="font-size: 14px; color: #666;">CAGR</div>
                     </div>
                     """, unsafe_allow_html=True)
                     
                 with col3:
                     st.markdown(f"""
-                    <div class="metric-box">
-                        <div class="metric-title">Annualized Volatility</div>
-                        <div class="metric-value">{advanced_metrics['annualized_volatility']*100:.2f}%</div>
-                        <div class="metric-sub">Portfolio risk</div>
+                    <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; margin: 10px 0; background-color: white;">
+                        <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #333;">Annualized Volatility</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #333;">{advanced_metrics['annualized_volatility']*100:.2f}%</div>
+                        <div style="font-size: 14px; color: #666;">Portfolio risk</div>
                     </div>
                     """, unsafe_allow_html=True)
                     
                 with col4:
                     st.markdown(f"""
-                    <div class="metric-box">
-                        <div class="metric-title">Max Drawdown</div>
-                        <div class="metric-value">{advanced_metrics['max_drawdown']*100:.2f}%</div>
-                        <div class="metric-sub">Worst decline</div>
+                    <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; margin: 10px 0; background-color: white;">
+                        <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #333;">Max Drawdown</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #333;">{advanced_metrics['max_drawdown']*100:.2f}%</div>
+                        <div style="font-size: 14px; color: #666;">Worst decline</div>
                     </div>
                     """, unsafe_allow_html=True)
                 
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown(f"""
-                    <div class="metric-box">
-                        <div class="metric-title">Sortino Ratio</div>
-                        <div class="metric-value">{advanced_metrics['sortino_ratio']:.2f}</div>
-                        <div class="metric-sub">Downside risk-adjusted</div>
+                    <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; margin: 10px 0; background-color: white;">
+                        <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #333;">Sortino Ratio</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #333;">{advanced_metrics['sortino_ratio']:.2f}</div>
+                        <div style="font-size: 14px; color: #666;">Downside risk-adjusted</div>
                     </div>
                     """, unsafe_allow_html=True)
                     
                 with col2:
                     st.markdown(f"""
-                    <div class="metric-box">
-                        <div class="metric-title">Calmar Ratio</div>
-                        <div class="metric-value">{advanced_metrics['calmar_ratio']:.2f}</div>
-                        <div class="metric-sub">Return vs drawdown</div>
+                    <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; margin: 10px 0; background-color: white;">
+                        <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #333;">Calmar Ratio</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #333;">{advanced_metrics['calmar_ratio']:.2f}</div>
+                        <div style="font-size: 14px; color: #666;">Return vs drawdown</div>
                     </div>
                     """, unsafe_allow_html=True)
             

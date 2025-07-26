@@ -29,7 +29,11 @@ def create_categorization_interface(df: pd.DataFrame) -> pd.DataFrame:
     suggestions = suggest_category_corrections(df_with_confidence)
     
     if suggestions:
-        st.warning(f"⚠️ Found {len(suggestions)} transactions that might need review:")
+        st.markdown("""
+        <div class="warning-gradient">
+            <strong>⚠️ Found {len(suggestions)} transactions that might need review</strong>
+        </div>
+        """, unsafe_allow_html=True)
         
         for suggestion in suggestions[:5]:  # Show top 5 suggestions
             with st.expander(f"Review: {suggestion['description'][:50]}..."):
