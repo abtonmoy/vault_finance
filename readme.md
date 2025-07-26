@@ -157,7 +157,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) for d
 
 ## 📧 Contact
 
-Maintainer: [Your Name](mailto:your.email@example.com)  
+[Abdul Basit Tonmoy](abdulbasittonmoy11@gmail.com)  
 GitHub Repo: [https://github.com/abtonmoy/vault_finance](https://github.com/abtonmoy/vault_finance)
 
 ---
