@@ -4,6 +4,7 @@ import pdfplumber
 import PyPDF2
 import streamlit as st
 import pandas as pd
+import numpy as np
 from typing import Dict, List, Tuple, Optional
 from config import patterns
 from utils import helpers
@@ -731,3 +732,463 @@ def create_transaction_type_summary(df):
         with st.expander("View Transfers"):
             transfer_mask = df.apply(lambda x: deduplicator.is_transfer_transaction(x['description']), axis=1)
             st.dataframe(df[transfer_mask][['date', 'description', 'amount']].head(10))
+
+
+class InvestmentTracker:
+    def __init__(self):
+        self.portfolio = pd.DataFrame()
+        self.transactions = pd.DataFrame()
+        self.historical_values = pd.DataFrame()
+        self.risk_free_rate = 0.02  # Default risk-free rate (2%)
+    
+    def parse_robinhood_csv(self, uploaded_file):
+        """Parse Robinhood CSV reports"""
+        try:
+            df = pd.read_csv(uploaded_file)
+            
+            # Standardize column names
+            df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
+            
+            # Filter relevant columns
+            required_cols = ['symbol', 'description', 'quantity', 'average_price', 
+                             'current_price', 'current_value', 'last_updated']
+            df = df[[col for col in required_cols if col in df.columns]]
+            
+            # Calculate additional metrics
+            if 'average_price' in df.columns and 'quantity' in df.columns:
+                df['cost_basis'] = df['average_price'] * df['quantity']
+            if 'current_price' in df.columns and 'quantity' in df.columns:
+                df['market_value'] = df['current_price'] * df['quantity']
+            if 'market_value' in df.columns and 'cost_basis' in df.columns:
+                df['gain_loss'] = df['market_value'] - df['cost_basis']
+                df['gain_loss_pct'] = (df['gain_loss'] / df['cost_basis']) * 100
+            
+            # Add source information
+            df['source'] = uploaded_file.name
+            df['brokerage'] = 'Robinhood'
+            df['report_date'] = datetime.now().date()
+            
+            # Add to portfolio
+            self._add_to_portfolio(df)
+            return True
+        except Exception as e:
+            st.error(f"Error parsing Robinhood CSV: {str(e)}")
+            helpers.debug_print("Robinhood CSV Error", str(e))
+            return False
+    
+    def parse_robinhood_pdf(self, uploaded_file):
+        """Enhanced Robinhood PDF parser with better error handling"""
+        try:
+            holdings = []
+            in_portfolio_section = False
+            table_started = False
+            current_description = None
+            debug_log = []
+            
+            debug_log.append(f"Starting parse of {uploaded_file.name}")
+            
+            with pdfplumber.open(uploaded_file) as pdf:
+                debug_log.append(f"PDF has {len(pdf.pages)} pages")
+                
+                for page_idx, page in enumerate(pdf.pages):
+                    debug_log.append(f"\n===== Page {page_idx+1} =====")
+                    
+                    page_text = page.extract_text()
+                    if not page_text:
+                        debug_log.append("Page has no text")
+                        continue
+                        
+                    lines = page_text.split('\n')
+                    debug_log.append(f"Extracted {len(lines)} lines")
+                    
+                    for line_idx, line in enumerate(lines):
+                        line = line.strip()
+                        
+                        # Skip page headers/footers and empty lines
+                        if "Robinhood" in line or "Page" in line or not line:
+                            continue
+                        
+                        # Detect start of portfolio section
+                        if "Portfolio Summary" in line:
+                            in_portfolio_section = True
+                            debug_log.append(f"ENTERED PORTFOLIO SECTION")
+                            continue
+                            
+                        # Detect end of portfolio section
+                        if "Account Activity" in line or "Deposit Sweep Program Banks" in line:
+                            in_portfolio_section = False
+                            table_started = False
+                            current_description = None
+                            debug_log.append(f"EXITED PORTFOLIO SECTION")
+                            continue
+                            
+                        if not in_portfolio_section:
+                            continue
+                        
+                        # Detect table header
+                        if "Securities Held in Account" in line and "Sym/Cusip" in line:
+                            table_started = True
+                            current_description = None
+                            debug_log.append(f"TABLE HEADER DETECTED")
+                            continue
+                            
+                        if not table_started:
+                            continue
+                        
+                        # Skip section breaks and totals
+                        if "Total Securities" in line or "Brokerage Cash Balance" in line:
+                            table_started = False
+                            current_description = None
+                            debug_log.append(f"TABLE ENDED")
+                            continue
+                            
+                        # Handle yield rows
+                        if "Estimated Yield:" in line:
+                            current_description = None  # Reset after yield line
+                            continue
+                            
+                        # Check if this is a security name line (no numbers, no symbols, no "Cash")
+                        if (not re.search(r'\d', line) and 
+                            not re.search(r'\$', line) and 
+                            'Cash' not in line and
+                            len(line.strip()) > 2):
+                            current_description = line.strip()
+                            debug_log.append(f"SECURITY NAME: {current_description}")
+                            continue
+                        
+                        # Process security data line
+                        if current_description:
+                            # Enhanced pattern to match Robinhood data format
+                            pattern = r'([A-Z]{1,5})\s+Cash\s+([\d\.]+)\s+\$([,\d\.]+)\s+\$([,\d\.]+)\s+\$([,\d\.]+)\s+([\d\.]+)%'
+                            match = re.search(pattern, line)
+                            
+                            if match:
+                                try:
+                                    symbol = match.group(1).strip()
+                                    quantity = float(match.group(2))
+                                    current_price = float(match.group(3).replace(',', ''))
+                                    market_value = float(match.group(4).replace(',', ''))
+                                    est_dividend = float(match.group(5).replace(',', ''))
+                                    portfolio_percent = float(match.group(6)) / 100
+                                    
+                                    security = {
+                                        'description': current_description,
+                                        'symbol': symbol,
+                                        'account_type': 'Cash',
+                                        'quantity': quantity,
+                                        'current_price': current_price,
+                                        'market_value': market_value,
+                                        'est_dividend': est_dividend,
+                                        'portfolio_percent': portfolio_percent,
+                                        'cost_basis': market_value,  # Use market value as cost basis placeholder
+                                        'average_price': current_price,
+                                        'gain_loss': 0.0,  # No gain/loss info in statement
+                                        'gain_loss_pct': 0.0,
+                                        'yield': 0.0
+                                    }
+                                    
+                                    holdings.append(security)
+                                    debug_log.append(f"ADDED SECURITY: {symbol} - {current_description} - ${market_value:.2f}")
+                                    
+                                except Exception as e:
+                                    debug_log.append(f"PARSE ERROR: {str(e)} in line: {line}")
+                            
+                            current_description = None  # Reset for next security
+            
+            if holdings:
+                debug_log.append(f"Successfully parsed {len(holdings)} holdings")
+                df = pd.DataFrame(holdings)
+                
+                # Add metadata
+                df['source'] = uploaded_file.name
+                df['brokerage'] = 'Robinhood'
+                df['report_date'] = datetime.now().date()
+                
+                # Verify required columns are present
+                required_cols = ['symbol', 'description', 'quantity', 'market_value', 'cost_basis']
+                for col in required_cols:
+                    if col not in df.columns:
+                        debug_log.append(f"ERROR: Missing required column {col}")
+                        return False, debug_log
+                
+                debug_log.append(f"DataFrame columns: {list(df.columns)}")
+                debug_log.append(f"DataFrame shape: {df.shape}")
+                
+                # Add to portfolio
+                self._add_to_portfolio(df)
+                return True, debug_log
+                
+            debug_log.append("No holdings found after processing all pages")
+            return False, debug_log
+            
+        except Exception as e:
+            debug_log.append(f"Critical error: {str(e)}")
+            import traceback
+            debug_log.append(traceback.format_exc())
+            return False, debug_log
+
+    def parse_generic_csv(self, uploaded_file, brokerage):
+        """Parse generic brokerage CSV reports"""
+        try:
+            df = pd.read_csv(uploaded_file)
+            
+            # Standardize column names
+            df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
+            
+            # Map columns to standard format
+            column_mapping = {
+                'ticker': 'symbol',
+                'ticker_symbol': 'symbol',
+                'security': 'description',
+                'shares': 'quantity',
+                'avg_cost': 'average_price',
+                'current_value': 'market_value',
+                'price': 'current_price',
+                'value': 'market_value',
+                'current_price': 'current_price'
+            }
+            
+            df.rename(columns=column_mapping, inplace=True)
+            
+            # Calculate metrics if columns exist
+            if 'average_price' in df.columns and 'quantity' in df.columns:
+                df['cost_basis'] = df['average_price'] * df['quantity']
+            if 'current_price' in df.columns and 'quantity' in df.columns:
+                df['market_value'] = df['current_price'] * df['quantity']
+            if 'market_value' in df.columns and 'cost_basis' in df.columns:
+                df['gain_loss'] = df['market_value'] - df['cost_basis']
+                df['gain_loss_pct'] = (df['gain_loss'] / df['cost_basis']) * 100
+            
+            # Add source information
+            df['source'] = uploaded_file.name
+            df['brokerage'] = brokerage
+            df['report_date'] = datetime.now().date()
+            
+            # Add to portfolio
+            self._add_to_portfolio(df)
+            return True
+        except Exception as e:
+            st.error(f"Error parsing {brokerage} CSV: {str(e)}")
+            helpers.debug_print(f"{brokerage} CSV Error", str(e))
+            return False
+    
+    def _add_to_portfolio(self, new_df):
+        """Add new holdings to portfolio, updating existing positions with better error handling"""
+        if new_df.empty:
+            st.warning("No data to add to portfolio")
+            return
+        
+        # Ensure required columns exist
+        required_columns = ['symbol', 'description', 'quantity', 'market_value']
+        missing_columns = [col for col in required_columns if col not in new_df.columns]
+        
+        if missing_columns:
+            st.error(f"Missing required columns: {missing_columns}")
+            st.error(f"Available columns: {list(new_df.columns)}")
+            return
+        
+        # Fill missing optional columns with defaults
+        if 'cost_basis' not in new_df.columns:
+            new_df['cost_basis'] = new_df['market_value']  # Use market value as fallback
+        if 'current_price' not in new_df.columns:
+            new_df['current_price'] = new_df['market_value'] / new_df['quantity']
+        if 'average_price' not in new_df.columns:
+            new_df['average_price'] = new_df['cost_basis'] / new_df['quantity']
+        if 'gain_loss' not in new_df.columns:
+            new_df['gain_loss'] = new_df['market_value'] - new_df['cost_basis']
+        if 'gain_loss_pct' not in new_df.columns:
+            new_df['gain_loss_pct'] = (new_df['gain_loss'] / new_df['cost_basis']) * 100
+        
+        if self.portfolio.empty:
+            self.portfolio = new_df.copy()
+            st.success(f"Added {len(new_df)} new positions to portfolio")
+        else:
+            # Update existing positions
+            updated_positions = 0
+            new_positions = 0
+            
+            for idx, row in new_df.iterrows():
+                symbol = row['symbol']
+                existing_idx = self.portfolio[self.portfolio['symbol'] == symbol].index
+                
+                if not existing_idx.empty:
+                    # Update existing position
+                    idx = existing_idx[0]
+                    # Update quantity and cost basis using weighted average
+                    old_quantity = self.portfolio.at[idx, 'quantity']
+                    old_cost_basis = self.portfolio.at[idx, 'cost_basis']
+                    
+                    new_quantity = old_quantity + row['quantity']
+                    new_cost_basis = old_cost_basis + row['cost_basis']
+                    
+                    self.portfolio.at[idx, 'quantity'] = new_quantity
+                    self.portfolio.at[idx, 'cost_basis'] = new_cost_basis
+                    self.portfolio.at[idx, 'average_price'] = new_cost_basis / new_quantity if new_quantity > 0 else 0
+                    
+                    # Update market value if current price is available
+                    if 'current_price' in row and pd.notnull(row['current_price']):
+                        self.portfolio.at[idx, 'current_price'] = row['current_price']
+                        self.portfolio.at[idx, 'market_value'] = new_quantity * row['current_price']
+                        self.portfolio.at[idx, 'gain_loss'] = self.portfolio.at[idx, 'market_value'] - new_cost_basis
+                        self.portfolio.at[idx, 'gain_loss_pct'] = (self.portfolio.at[idx, 'gain_loss'] / new_cost_basis) * 100 if new_cost_basis > 0 else 0
+                    
+                    updated_positions += 1
+                else:
+                    # Add new position
+                    self.portfolio = pd.concat([self.portfolio, row.to_frame().T], ignore_index=True)
+                    new_positions += 1
+            
+            st.success(f"Updated {updated_positions} existing positions, added {new_positions} new positions")
+        
+        # Update historical values
+        self._update_historical_values()
+    
+    def _update_historical_values(self):
+        """Update historical portfolio values"""
+        total_value = self.portfolio['market_value'].sum()
+        new_entry = pd.DataFrame({
+            'date': [datetime.now().date()],
+            'total_value': [total_value],
+            'num_holdings': [len(self.portfolio)]
+        })
+        
+        if self.historical_values.empty:
+            self.historical_values = new_entry
+        else:
+            self.historical_values = pd.concat([self.historical_values, new_entry], ignore_index=True)
+    
+    def calculate_portfolio_summary(self):
+        """Calculate portfolio summary statistics with error handling"""
+        if self.portfolio.empty:
+            st.warning("Portfolio is empty")
+            return None
+        
+        # Check for required columns
+        required_columns = ['market_value', 'cost_basis', 'gain_loss']
+        missing_columns = [col for col in required_columns if col not in self.portfolio.columns]
+        
+        if missing_columns:
+            st.error(f"Portfolio missing required columns: {missing_columns}")
+            st.error(f"Available columns: {list(self.portfolio.columns)}")
+            return None
+        
+        try:
+            summary = {
+                'total_value': self.portfolio['market_value'].sum(),
+                'total_cost_basis': self.portfolio['cost_basis'].sum(),
+                'total_gain_loss': self.portfolio['gain_loss'].sum(), 
+                'num_positions': len(self.portfolio),
+                'num_brokerages': self.portfolio['brokerage'].nunique() if 'brokerage' in self.portfolio.columns else 1
+            }
+            
+            summary['gain_loss_pct'] = (
+                (summary['total_gain_loss'] / summary['total_cost_basis']) * 100 
+                if summary['total_cost_basis'] > 0 else 0
+            )
+            
+            return summary
+            
+        except Exception as e:
+            st.error(f"Error calculating portfolio summary: {str(e)}")
+            st.error(f"Portfolio columns: {list(self.portfolio.columns)}")
+            st.error(f"Portfolio shape: {self.portfolio.shape}")
+            return None
+    
+    def calculate_advanced_metrics(self):
+        """Calculate advanced portfolio metrics"""
+        if self.historical_values.empty or len(self.historical_values) < 2:
+            return None
+        
+        # Calculate returns
+        returns = self.historical_values.sort_values('date')
+        returns['daily_return'] = returns['total_value'].pct_change()
+        
+        # Remove first row (no return)
+        returns = returns.iloc[1:]
+        
+        if returns.empty:
+            return None
+        
+        # Calculate metrics
+        avg_daily_return = returns['daily_return'].mean()
+        std_daily_return = returns['daily_return'].std()
+        total_return = (returns['total_value'].iloc[-1] / returns['total_value'].iloc[0]) - 1
+        
+        # Annualize metrics
+        trading_days = 252
+        annualized_return = (1 + avg_daily_return) ** trading_days - 1
+        annualized_volatility = std_daily_return * np.sqrt(trading_days)
+        
+        # Calculate Sharpe ratio
+        sharpe_ratio = (annualized_return - self.risk_free_rate) / annualized_volatility
+        
+        # Calculate Sortino ratio (only downside volatility)
+        downside_returns = returns[returns['daily_return'] < 0]['daily_return']
+        downside_volatility = downside_returns.std() * np.sqrt(trading_days)
+        sortino_ratio = (annualized_return - self.risk_free_rate) / downside_volatility if downside_volatility > 0 else 0
+        
+        # Calculate maximum drawdown
+        cumulative_returns = (1 + returns['daily_return']).cumprod()
+        peak = cumulative_returns.expanding(min_periods=1).max()
+        drawdown = (cumulative_returns - peak) / peak
+        max_drawdown = drawdown.min()
+        
+        # Calculate Calmar ratio
+        calmar_ratio = annualized_return / abs(max_drawdown) if max_drawdown < 0 else 0
+        
+        return {
+            'sharpe_ratio': sharpe_ratio,
+            'sortino_ratio': sortino_ratio,
+            'calmar_ratio': calmar_ratio,
+            'annualized_return': annualized_return,
+            'annualized_volatility': annualized_volatility,
+            'max_drawdown': max_drawdown,
+            'total_return': total_return,
+            'risk_free_rate': self.risk_free_rate
+        }
+    
+    def get_sector_breakdown(self):
+        """Group holdings by sector (requires sector data)"""
+        if 'sector' in self.portfolio.columns:
+            return self.portfolio.groupby('sector').agg({
+                'market_value': 'sum',
+                'gain_loss': 'sum'
+            }).reset_index()
+        return None
+    
+    def get_asset_class_breakdown(self):
+        """Group holdings by asset class (stock, ETF, crypto)"""
+        if self.portfolio.empty:
+            return None
+            
+        # Simple classifier based on description
+        def classify_asset(description):
+            if pd.isna(description):
+                return 'Unknown'
+            desc = description.lower()
+            if 'etf' in desc:
+                return 'ETF'
+            if 'fund' in desc:
+                return 'Mutual Fund'
+            if 'bitcoin' in desc or 'crypto' in desc or 'coin' in desc:
+                return 'Crypto'
+            return 'Stock'
+        
+        self.portfolio['asset_class'] = self.portfolio['description'].apply(classify_asset)
+        return self.portfolio.groupby('asset_class').agg({
+            'market_value': 'sum',
+            'quantity': 'sum',
+            'symbol': 'count'
+        }).reset_index().rename(columns={'symbol': 'holdings'})
+    
+    def get_top_performers(self, n=5):
+        """Get top performing positions"""
+        if self.portfolio.empty:
+            return pd.DataFrame()
+        return self.portfolio.nlargest(n, 'gain_loss_pct')
+    
+    def get_bottom_performers(self, n=5):
+        """Get bottom performing positions"""
+        if self.portfolio.empty:
+            return pd.DataFrame()
+        return self.portfolio.nsmallest(n, 'gain_loss_pct')

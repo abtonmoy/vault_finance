@@ -2,6 +2,7 @@ import streamlit as st
 from interfaces import main_ui
 from interfaces import review_ui
 from interfaces import rules_ui
+from interfaces import investment_tracker
 
 def main():
     # Initialize session state
@@ -25,7 +26,7 @@ def main():
         # kf
 
     with tab4:
-        pass
+        investment_tracker.show_investment_dashboard()
 
 if __name__ == "__main__":
     main()
