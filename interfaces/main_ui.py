@@ -705,16 +705,20 @@ def main_ui():
             
             # Show success summary
             show_success_summary(df)
+
+            # sankey diagram
+            show_sankey_flow_diagram(df)
             
             # Transaction type analysis
             create_transaction_type_summary(df)
+
+            
+            # show_enhanced_transaction_table(df, uploaded_files)
             
             # Show all enhanced visualizations
             show_all_enhanced_visualizations(df, uploaded_files)
 
-            # sankey diagram
-            show_sankey_flow_diagram(df)
-            show_enhanced_transaction_table(df, uploaded_files)
+            #
             
             # Export section
             st.markdown("""
