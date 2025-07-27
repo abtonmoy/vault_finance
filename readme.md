@@ -3,6 +3,7 @@
 ![Project Banner](assets/banner.png)
 
 Vault Finance is a privacy-first personal finance and investment analyzer that processes PDF bank statements and brokerage reports, tracks equity holdings, categorizes transactions, and delivers deep financial insights via interactive dashboards. It's designed to give you a clear, comprehensive view of your financial health, all while keeping your data secure and private.
+visit: [Vault Finance](https://vaultfinance.streamlit.app/)
 
 ## ✨ Key Features
 
@@ -15,6 +16,15 @@ Vault Finance is a privacy-first personal finance and investment analyzer that p
 - **Interactive Dashboards:** Filterable analytics provide a detailed view of your finances.
 - **Customizable Rules Engine:** Create merchant-specific rules to refine categorization.
 - **Comprehensive Reporting:** Export financial summaries and transaction data in CSV format.
+
+## ScreenShots
+
+**Landing page:**
+![LP](assets\landing_page.png)
+**Investment Flow:**
+![Investment flow](assets\sss1.png)
+**Historic Heatmap:**
+![historical heatmap](assets\hhm.png)
 
 ## 🚀 Getting Started
 
