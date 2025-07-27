@@ -20,11 +20,13 @@ visit: [Vault Finance](https://vaultfinance.streamlit.app/)
 ## ScreenShots
 
 **Landing page:**
-![LP](assets\landing_page.png)
+![LP](assets/landing_page.png)
+
 **Investment Flow:**
-![Investment flow](assets\sss1.png)
+![Investment flow](assets/sss1.png)
+
 **Historic Heatmap:**
-![historical heatmap](assets\hhm.png)
+![historical heatmap](assets/hhm.png)
 
 ## 🚀 Getting Started
 
