@@ -518,7 +518,7 @@ def main():
     # Set page configuration
     st.set_page_config(
         page_title="Financial Analyzer",
-        page_icon="💰",
+        page_icon="assets/icon.png",
         layout="wide",
         initial_sidebar_state="expanded"
     )
@@ -530,7 +530,7 @@ def main():
     if 'transactions_df' not in st.session_state:
         st.session_state['transactions_df'] = None
 
-    st.image("assets/profile.png", width=60)
+    st.image("assets/logo1.png", width=60)
     st.markdown("""
     <h1 style="color: black; margin: 0;">Vault Finance</h1>
     """, unsafe_allow_html=True)
@@ -546,6 +546,18 @@ def main():
     
     with tab1:
         main_ui.main_ui()
+        st.markdown("""
+    <div style="text-align: center; margin-top: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+      <p style="font-size: 0.9rem; color: #888;">
+        ⚠️ <strong>Disclaimer:</strong> This tool is for informational and analytical purposes only.<br>
+        The developer is <strong>not responsible</strong> for any financial decisions made based on its output.<br>
+        Results may not always be accurate. Always review outputs manually.
+      </p>
+      <p style="font-size: 0.9rem; color: #aaa; margin-top: 0.5rem;">
+        Recommended to use in <strong>Light Mode</strong> for best viewing experience.
+      </p>
+    </div>
+    """, unsafe_allow_html=True)
    
     with tab2:
         if st.session_state['transactions_df'] is not None:

@@ -108,7 +108,7 @@ def show_welcome_screen():
     st.markdown("""
     <div class="gradient-header">
         <h1 style="margin: 0;"> Personal Vault </h1>
-        <p style="margin: 0.5rem 0 0 0;">transaction analysis with auto categorization and duplicate detection</p>
+        <p style="margin: 0.5rem 0 0 0;">Transaction analysis with auto categorization and duplicate detection</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -119,7 +119,7 @@ def show_welcome_screen():
         st.markdown("""
         <div class="feature-card">
             <h3>Algorithmic Categorization</h3>
-            <p>Advanced machine learning automatically categorizes your transactions with high accuracy</p>
+            <p>Automatically categorizes your transactions with high accuracy</p>
             <ul>
                 <li>Fuzzy merchant matching</li>
                 <li>Amount-based rules</li>
@@ -132,7 +132,7 @@ def show_welcome_screen():
     with col2:
         st.markdown("""
         <div class="feature-card">
-            <h3>🔍 Smart Deduplication</h3>
+            <h3>Smart Deduplication</h3>
             <p>Intelligent duplicate detection handles complex financial scenarios</p>
             <ul>
                 <li>Credit card payment cycles</li>
@@ -146,8 +146,8 @@ def show_welcome_screen():
     with col3:
         st.markdown("""
         <div class="feature-card">
-            <h3>📊 Advanced Analytics</h3>
-            <p>Comprehensive financial insights and beautiful visualizations</p>
+            <h3> Analytics</h3>
+            <p>Financial insights and beautiful visualizations</p>
             <ul>
                 <li>Interactive dashboards</li>
                 <li>Spending pattern analysis</li>
@@ -193,13 +193,12 @@ def show_welcome_screen():
     
     with col2:
         st.markdown("""
-        ### 🏦 Supported Banks:
+        ### 🏦 Supported Banks and Brokerages:
         
         **Fully Tested:**
         - ✅ Chase Bank
-        - ✅ Wells Fargo
-        - ✅ Bank of America
-        - ✅ Citibank
+        - ✅ Robinhood
+        - Other banks and Brokerages might work (not sure)
         
         **Generally Compatible:**
         - 🔄 Most major US banks
@@ -218,7 +217,15 @@ def show_welcome_screen():
     <div class="gradient-card" style="text-align: center; margin-top: 2rem;">
         <h3 style="margin-top: 0;">🎯 Ready to Start?</h3>
         <p>Upload your bank statement PDF files below</p>
+        <p>Developer info: 
+        <strong>Abdul Basit Tonmoy</strong> — <a href="https://github.com/abtonmoy" target="_blank" style="color: black; text-decoration: none;">
+            GitHub Profile
+        </a>
+    </p>
+        
     </div>
+    
+
     """, unsafe_allow_html=True)
 
 def show_processing_progress(uploaded_files):
@@ -295,7 +302,7 @@ def main_ui():
     
     # Set page config
     st.set_page_config(
-        page_title="Vault Finances",
+        page_title="Vault Finance",
         page_icon="assets/icon.png",
         layout="wide",
         initial_sidebar_state="expanded"
@@ -431,10 +438,10 @@ Top Spending Categories:
                 - Try downloading statements in different formats from your bank
                 - Some mobile banking PDFs may not work - use desktop/web versions
                 
-                **🏦 Bank Compatibility:**
-                - Works best with Chase, Wells Fargo, Bank of America
+                **🏦 Bank and Brokerage Compatibility:**
+                - Works best with Chase and Robinhood
                 - Other banks may need format adjustments
-                - Contact support if your bank isn't recognized
+    
                 
                 **📊 Data Quality:**
                 - Check if PDFs have transactions in table format
