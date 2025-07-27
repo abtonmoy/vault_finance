@@ -1,4 +1,4 @@
-# 🏦 Vault Finance – Personal Finance & Investment Analyzer
+# ![icon](assets/icon.png) Vault Finance – Personal Finance & Investment Analyzer
 
 ![Project Banner](assets/banner.png)
 
