@@ -211,7 +211,7 @@ def show_sankey_flow_diagram(df):
         )
     )
     
-    # Display with enhanced config
+    # Display with  config
     st.plotly_chart(fig, use_container_width=True, config={
         'displayModeBar': False,
         'displaylogo': False,

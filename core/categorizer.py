@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class TransactionCategorizer:
     """
-    Enhanced transaction categorizer with improved accuracy and performance.
+    Transaction categorizer with improved accuracy and performance.
     """
     
     def __init__(self):
@@ -164,7 +164,7 @@ class TransactionCategorizer:
             
         desc_lower = description.lower()
 
-        # Enhanced known merchants database
+        # known merchants database
         known_merchants = {
             # Online/Tech
             'amazon': 'Shopping',
@@ -292,7 +292,7 @@ class TransactionCategorizer:
 
     def multi_pass_categorization(self, description: str, amount: float, date: datetime = None) -> str:
         """
-        Enhanced categorization using multiple passes with improved error handling.
+            categorization using multiple passes with improved error handling.
         """
         try:
             amount = float(amount) if amount is not None else 0.0

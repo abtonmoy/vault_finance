@@ -279,7 +279,7 @@ class InvestmentTracker:
             return False
     
     def parse_robinhood_pdf(self, uploaded_file):
-        """Enhanced Robinhood PDF parser with better error handling"""
+        """Robinhood PDF parser with better error handling"""
         try:
             holdings = []
             in_portfolio_section = False
@@ -360,8 +360,7 @@ class InvestmentTracker:
                         
                         # Process security data line
                         if current_description:
-                            # Enhanced pattern to match Robinhood data format
-                            # Example: AAPL Cash 0.129039 $205.1700 $26.47 $0.13 9.35%
+                            # Pattern to match Robinhood data format
                             pattern = r'([A-Z]{1,5})\s+Cash\s+([\d\.]+)\s+\$([,\d\.]+)\s+\$([,\d\.]+)\s+\$([,\d\.]+)\s+([\d\.]+)%'
                             match = re.search(pattern, line)
                             
@@ -1071,7 +1070,7 @@ class InvestmentTracker:
 
 def parse_investment_documents(uploaded_files, doc_type, brokerage):
     """
-    Main function to parse investment documents with enhanced debugging
+    Main function to parse investment documents with debugging
     """
     debug_info = []
     debug_info.append(f"🚀 Starting document parsing for {len(uploaded_files)} files")

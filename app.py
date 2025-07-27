@@ -6,7 +6,7 @@ from interfaces import investment_tracker
 import base64
 
 
-# Enhanced global theme configuration with the specified color palette
+# global theme configuration with the specified color palette
 def apply_global_theme():
     st.markdown("""
     <style>
@@ -523,7 +523,7 @@ def main():
         initial_sidebar_state="expanded"
     )
     
-    # Apply enhanced global theme
+    # Apply global theme
     apply_global_theme()
 
     # Initialize session state
@@ -536,7 +536,6 @@ def main():
     """, unsafe_allow_html=True)
 
         
-    # Enhanced tab layout with better icons and descriptions
     tab1, tab2, tab3, tab4 = st.tabs([
         "📄 Upload & Analyze", 
         "🎯 Review & Correct", 

@@ -348,7 +348,7 @@ class TransactionDeduplicator:
 
 
 def parse_date(date_str: str, statement_year: int = None) -> Optional[datetime]:
-    """Enhanced date parsing for Chase statements"""
+    """Date parsing for Chase statements"""
     if not date_str or pd.isna(date_str):
         return None
     
@@ -402,7 +402,7 @@ def parse_date(date_str: str, statement_year: int = None) -> Optional[datetime]:
     return None
 
 def clean_amount(amount_str: str) -> float:
-    """Enhanced amount cleaning for various formats"""
+    """Amount cleaning for various formats"""
     if not amount_str or pd.isna(amount_str):
         return 0.0
     
@@ -622,7 +622,7 @@ def parse_pdf_statement(uploaded_files, dedup_config=None) -> pd.DataFrame:
         df = pd.DataFrame(raw_transactions)
         df['source_file'] = uploaded_file.name
         
-        # Enhanced categorization with date info
+        # categorization with date info
         df['category'] = df.apply(lambda x: categorizer.categorize_transaction(x['description'], x['amount'], x['date']), axis=1)
         
         # Filter out likely non-transactions
@@ -777,7 +777,7 @@ class InvestmentTracker:
             return False
     
     def parse_robinhood_pdf(self, uploaded_file):
-        """Enhanced Robinhood PDF parser with better error handling"""
+        """Robinhood PDF parser with better error handling"""
         try:
             holdings = []
             in_portfolio_section = False
@@ -858,7 +858,7 @@ class InvestmentTracker:
                         
                         # Process security data line
                         if current_description:
-                            # Enhanced pattern to match Robinhood data format
+                            # pattern to match Robinhood data format
                             pattern = r'([A-Z]{1,5})\s+Cash\s+([\d\.]+)\s+\$([,\d\.]+)\s+\$([,\d\.]+)\s+\$([,\d\.]+)\s+([\d\.]+)%'
                             match = re.search(pattern, line)
                             
