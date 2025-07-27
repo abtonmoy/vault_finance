@@ -1,6 +1,3 @@
-Okay, here's an updated `README.md` file for your Vault Finance project, incorporating more detail, better formatting, and a more polished presentation. I've expanded on the features, added sections for setup, usage, and contributing, and improved the overall readability. I've also included a disclaimer.
-
-````markdown
 # 🏦 Vault Finance – Personal Finance & Investment Analyzer
 
 ![Project Banner](asseets/ss1.png)
@@ -36,6 +33,7 @@ cd vault_finance
 # Install dependencies
 pip install -r requirement.txt
 ```
+
 ````
 
 ### Running the Application
@@ -119,7 +117,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact
 
-[Abdul Basit Tonmoy](abdulbasittonmoy11@gmail.com)  
+[Abdul Basit Tonmoy](abdulbasittonmoy11@gmail.com)
 GitHub Repo: [https://github.com/abtonmoy/vault_finance](https://github.com/abtonmoy/vault_finance)
 
 ---
@@ -127,5 +125,4 @@ GitHub Repo: [https://github.com/abtonmoy/vault_finance](https://github.com/abto
 **Disclaimer**: Vault Finance processes all data locally. The authors are not liable for incorrect analytics or financial loss. Always cross-check with your financial provider. Use this tool at your own risk.
 
 ```
-
-```
+````
