@@ -124,5 +124,5 @@ GitHub Repo: [https://github.com/abtonmoy/vault_finance](https://github.com/abto
 
 **Disclaimer**: Vault Finance processes all data locally. The authors are not liable for incorrect analytics or financial loss. Always cross-check with your financial provider. Use this tool at your own risk.
 
-```
+
 ````
