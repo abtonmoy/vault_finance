@@ -1,6 +1,6 @@
 # 🏦 Vault Finance – Personal Finance & Investment Analyzer
 
-![Project Banner](asseets/ss1.png)
+![Project Banner](assets/ss1.png)
 
 Vault Finance is a privacy-first personal finance and investment analyzer that processes PDF bank statements and brokerage reports, tracks equity holdings, categorizes transactions, and delivers deep financial insights via interactive dashboards. It's designed to give you a clear, comprehensive view of your financial health, all while keeping your data secure and private.
 
