@@ -6,20 +6,35 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from utils.theme import THEME_COLORS, THEME_GRADIENTS
+from utils.individual_vis import show_individual_file_analysis
 
-# Modern color palette
-MODERN_COLORS = {
-    'primary': '#4A90E2',      # Modern blue
-    'secondary': '#2E8B8B',    # Teal
-    'success': '#2ECC71',      # Green
-    'danger': '#FF6B6B',       # Coral red
-    'warning': '#F39C12',      # Orange
-    'info': '#5BA3F5',         # Light blue
-    'dark': '#f8f9fa',         # Light gray background
-    'light': '#ffffff',        # White
-    'text': '#2c3e50',         # Dark text color
-    'grid': '#e9ecef'          # Light grid color
-}
+# Define a consistent color palette from theme
+CHART_COLORS = [
+    THEME_COLORS["lapis_lazuli"],
+    THEME_COLORS["midnight_green"], 
+    THEME_COLORS["pakistan_green"],
+    THEME_COLORS["dark_green"],
+    "#2E8B8B",  # Complementary teal
+    "#4A90A4",  # Complementary blue-gray
+    "#5B9279",  # Complementary green-gray
+    "#6B7A8F"   # Complementary gray-blue
+]
+
+# High contrast colors for scatter plots against dark backgrounds
+SCATTER_COLORS = [
+    "#FF6B6B",  # Bright coral red
+    "#4ECDC4",  # Bright teal
+    "#45B7D1",  # Bright blue
+    "#96CEB4",  # Mint green
+    "#FFEAA7",  # Light yellow
+    "#DDA0DD",  # Plum
+    "#98D8C8",  # Aquamarine
+    "#F7DC6F",  # Light gold
+    "#BB8FCE",  # Light purple
+    "#85C1E9",  # Light blue
+    "#F8C471",  # Light orange
+    "#82E0AA"   # Light green
+]
 
 def show_file_summary(df):
     """Display enhanced file summary with modern visual cards"""
@@ -35,8 +50,7 @@ def show_file_summary(df):
     files = summary.index.tolist()
     cols = st.columns(min(len(files), 3))
     
-    colors = [MODERN_COLORS['primary'], MODERN_COLORS['secondary'], MODERN_COLORS['success'], 
-              MODERN_COLORS['info'], MODERN_COLORS['warning'], MODERN_COLORS['danger']]
+    colors = CHART_COLORS[:len(files)]
     
     for i, file in enumerate(files):
         with cols[i % 3]:
@@ -87,14 +101,14 @@ def show_enhanced_metrics(df):
     days_span = (df['date'].max() - df['date'].min()).days if 'date' in df.columns else 0
     daily_avg_spending = total_expenses / max(days_span, 1) if days_span > 0 else 0
     
-    # Create modern metric cards
+    # Create modern metric cards using theme colors
     col1, col2, col3, col4 = st.columns(4)
     
     metrics = [
-        ("Total Income", total_income, "💰", MODERN_COLORS['success']),
-        ("Total Expenses", total_expenses, "💸", MODERN_COLORS['danger']),
-        ("Net Income", net_income, "📊", MODERN_COLORS['success'] if net_income > 0 else MODERN_COLORS['danger']),
-        ("Daily Avg Spend", daily_avg_spending, "📅", MODERN_COLORS['info'])
+        ("Total Income", total_income, "💰", THEME_COLORS["lapis_lazuli"]),
+        ("Total Expenses", total_expenses, "💸", "#FF6B6B"),
+        ("Net Income", net_income, "📊", THEME_COLORS["lapis_lazuli"] if net_income > 0 else "#FF6B6B"),
+        ("Daily Avg Spend", daily_avg_spending, "📅", THEME_COLORS["midnight_green"])
     ]
     
     columns = [col1, col2, col3, col4]
@@ -134,7 +148,7 @@ def show_enhanced_metrics(df):
         with [col1, col2, col3, col4][i]:
             st.markdown(f"""
             <div style="
-                background: linear-gradient(135deg, {MODERN_COLORS['secondary']} 0%, {MODERN_COLORS['primary']} 100%);
+                background: linear-gradient(135deg, {THEME_COLORS['midnight_green']} 0%, {THEME_COLORS['lapis_lazuli']} 100%);
                 padding: 1.2rem;
                 border-radius: 12px;
                 color: white;
@@ -169,11 +183,7 @@ def show_enhanced_spending_overview(df):
         horizontal_spacing=0.12
     )
     
-    # Modern color palette
-    colors = [MODERN_COLORS['primary'], MODERN_COLORS['danger'], MODERN_COLORS['success'], 
-              MODERN_COLORS['warning'], MODERN_COLORS['info'], MODERN_COLORS['secondary']]
-    
-    # 1. Enhanced Pie Chart with modern styling
+    # 1.  Pie Chart with theme colors
     category_spending = spending_df.groupby('category')['amount'].sum().abs()
     category_spending = category_spending.sort_values(ascending=False)
     
@@ -183,7 +193,7 @@ def show_enhanced_spending_overview(df):
             values=category_spending.values,
             hole=0.5,
             marker=dict(
-                colors=colors[:len(category_spending)],
+                colors=CHART_COLORS[:len(category_spending)],
                 line=dict(color='white', width=2)
             ),
             textposition="outside",
@@ -194,8 +204,7 @@ def show_enhanced_spending_overview(df):
         row=1, col=1
     )
     
-    # 2. Modern Daily Spending Trend
-    
+    # 2. Daily Spending Trend
     if 'date' in spending_df.columns:
         daily_spending = spending_df.groupby('date')['amount'].sum().abs().sort_index()
         daily_spending_ma = daily_spending.rolling(window=7, center=True).mean()
@@ -204,9 +213,9 @@ def show_enhanced_spending_overview(df):
             go.Scatter(
                 x=daily_spending.index,
                 y=daily_spending.values,
-                mode='lines+markers',  # Changed from 'markers' to connect points with lines
-                marker=dict(color=MODERN_COLORS['danger'], size=6, opacity=0.6),
-                line=dict(color=MODERN_COLORS['danger'], width=1),  # Thin line to connect points
+                mode='lines+markers',
+                marker=dict(color='#FF6B6B', size=6, opacity=0.6),
+                line=dict(color='#FF6B6B', width=1),
                 name='Daily',
                 showlegend=False,
                 hovertemplate="Date: %{x}<br>Spending: $%{y:.2f}<extra></extra>"
@@ -219,7 +228,7 @@ def show_enhanced_spending_overview(df):
                 x=daily_spending_ma.index,
                 y=daily_spending_ma.values,
                 mode='lines',
-                line=dict(color=MODERN_COLORS['primary'], width=3),
+                line=dict(color=THEME_COLORS["lapis_lazuli"], width=3),
                 name='7-day Average',
                 showlegend=False,
                 hovertemplate="Date: %{x}<br>7-day Avg: $%{y:.2f}<extra></extra>"
@@ -227,7 +236,7 @@ def show_enhanced_spending_overview(df):
             row=1, col=2
         )
     
-    # 3. Modern Top Merchants Bar Chart
+    # 3.  Top Merchants Bar Chart
     top_merchants = spending_df.groupby('description')['amount'].sum().abs().sort_values(ascending=True).tail(10)
     
     fig.add_trace(
@@ -236,7 +245,7 @@ def show_enhanced_spending_overview(df):
             y=[desc[:30] + '...' if len(desc) > 30 else desc for desc in top_merchants.index],
             orientation='h',
             marker=dict(
-                color=MODERN_COLORS['secondary'],
+                color=THEME_COLORS["midnight_green"],
                 line=dict(color='white', width=1)
             ),
             hovertemplate="<b>%{y}</b><br>Total Spent: $%{x:,.2f}<extra></extra>"
@@ -244,7 +253,7 @@ def show_enhanced_spending_overview(df):
         row=2, col=1
     )
     
-    # 4. Modern Amount Distribution
+    # 4. Amount Distribution
     amounts = spending_df['amount'].abs()
     
     fig.add_trace(
@@ -252,7 +261,7 @@ def show_enhanced_spending_overview(df):
             x=amounts,
             nbinsx=25,
             marker=dict(
-                color=MODERN_COLORS['info'],
+                color=THEME_COLORS["midnight_green"],
                 opacity=0.8,
                 line=dict(color='white', width=1)
             ),
@@ -261,26 +270,26 @@ def show_enhanced_spending_overview(df):
         row=2, col=2
     )
     
-    # Modern layout
+    # Modern layout with theme colors
     fig.update_layout(
         height=850,
         showlegend=False,
         title=dict(
             text="Spending Analysis",
             x=0.5,
-            font=dict(size=24, family="Inter, sans-serif", color=MODERN_COLORS['text'])
+            font=dict(size=24, family="Inter, sans-serif", color='white')
         ),
-        paper_bgcolor=MODERN_COLORS['light'],
-        plot_bgcolor=MODERN_COLORS['light'],
-        font=dict(color=MODERN_COLORS['text'], family="Inter, sans-serif")
+        paper_bgcolor=THEME_COLORS["dark_green"],
+        plot_bgcolor=THEME_COLORS["dark_green"],
+        font=dict(color='white', family="Inter, sans-serif")
     )
     
     # Update subplot styling
-    fig.update_annotations(font_size=16, font_color=MODERN_COLORS['text'], font_family="Inter, sans-serif")
+    fig.update_annotations(font_size=16, font_color='white', font_family="Inter, sans-serif")
     
     # Update axes for modern look
-    fig.update_xaxes(gridcolor=MODERN_COLORS['grid'], tickfont=dict(color=MODERN_COLORS['text']))
-    fig.update_yaxes(gridcolor=MODERN_COLORS['grid'], tickfont=dict(color=MODERN_COLORS['text']))
+    fig.update_xaxes(gridcolor="rgba(255,255,255,0.1)", tickfont=dict(color='white'))
+    fig.update_yaxes(gridcolor="rgba(255,255,255,0.1)", tickfont=dict(color='white'))
     
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
@@ -321,14 +330,14 @@ def show_advanced_monthly_analysis(df):
         specs=[[{}], [{"secondary_y": True}]]
     )
     
-    # Income/Expense bars with modern styling
+    # Income/Expense bars with theme styling
     fig.add_trace(
         go.Bar(
             x=all_months,
             y=income_values,
             name='Income',
             marker=dict(
-                color=MODERN_COLORS['success'],
+                color=THEME_COLORS["lapis_lazuli"],
                 line=dict(color='white', width=1)
             ),
             opacity=0.9,
@@ -343,7 +352,7 @@ def show_advanced_monthly_analysis(df):
             y=expense_values,
             name='Expenses',
             marker=dict(
-                color=MODERN_COLORS['danger'],
+                color='#FF6B6B',
                 line=dict(color='white', width=1)
             ),
             opacity=0.9,
@@ -353,7 +362,7 @@ def show_advanced_monthly_analysis(df):
     )
     
     # Net income bars with conditional colors
-    colors = [MODERN_COLORS['success'] if x >= 0 else MODERN_COLORS['danger'] for x in net_values]
+    colors = [THEME_COLORS["lapis_lazuli"] if x >= 0 else '#FF6B6B' for x in net_values]
     
     fig.add_trace(
         go.Bar(
@@ -381,19 +390,19 @@ def show_advanced_monthly_analysis(df):
                 y=trend_line,
                 mode='lines',
                 name='Trend',
-                line=dict(color=MODERN_COLORS['warning'], width=4, dash='dash'),
+                line=dict(color='#FFEAA7', width=4, dash='dash'),
                 hovertemplate="Trend: $%{y:,.2f}<extra></extra>"
             ),
             row=2, col=1
         )
     
-    # Modern layout
+    # Modern layout with theme
     fig.update_layout(
         height=750,
         title=dict(
             text="Monthly Financial Trends",
             x=0.5,
-            font=dict(size=22, family="Inter, sans-serif", color=MODERN_COLORS['text'])
+            font=dict(size=22, family="Inter, sans-serif", color='white')
         ),
         showlegend=True,
         legend=dict(
@@ -402,35 +411,35 @@ def show_advanced_monthly_analysis(df):
             y=1.02,
             xanchor="right",
             x=1,
-            font=dict(color=MODERN_COLORS['text'])
+            font=dict(color='white')
         ),
-        paper_bgcolor=MODERN_COLORS['light'],
-        plot_bgcolor=MODERN_COLORS['light'],
-        font=dict(color=MODERN_COLORS['text'], family="Inter, sans-serif")
+        paper_bgcolor=THEME_COLORS["dark_green"],
+        plot_bgcolor=THEME_COLORS["dark_green"],
+        font=dict(color='white', family="Inter, sans-serif")
     )
     
-    # Update axes - FIXED: using title_font instead of titlefont
+    # Update axes with theme styling
     fig.update_xaxes(
         title_text="Month", 
         row=2, col=1, 
         tickangle=45,
-        gridcolor=MODERN_COLORS['grid'],
-        tickfont=dict(color=MODERN_COLORS['text']),
-        title_font=dict(color=MODERN_COLORS['text'])
+        gridcolor="rgba(255,255,255,0.1)",
+        tickfont=dict(color='white'),
+        title_font=dict(color='white')
     )
     fig.update_yaxes(
         title_text="Amount ($)", 
         row=1, col=1,
-        gridcolor=MODERN_COLORS['grid'],
-        tickfont=dict(color=MODERN_COLORS['text']),
-        title_font=dict(color=MODERN_COLORS['text'])
+        gridcolor="rgba(255,255,255,0.1)",
+        tickfont=dict(color='white'),
+        title_font=dict(color='white')
     )
     fig.update_yaxes(
         title_text="Net Income ($)", 
         row=2, col=1,
-        gridcolor=MODERN_COLORS['grid'],
-        tickfont=dict(color=MODERN_COLORS['text']),
-        title_font=dict(color=MODERN_COLORS['text'])
+        gridcolor="rgba(255,255,255,0.1)",
+        tickfont=dict(color='white'),
+        title_font=dict(color='white')
     )
     
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
@@ -464,17 +473,13 @@ def show_category_insights(df):
         horizontal_spacing=0.15
     )
     
-    # Modern color palette for categories
-    colors = [MODERN_COLORS['primary'], MODERN_COLORS['danger'], MODERN_COLORS['success'], 
-              MODERN_COLORS['warning'], MODERN_COLORS['info'], MODERN_COLORS['secondary']]
-    
-    # Total spending with gradient effect
+    # Total spending with theme colors
     fig.add_trace(
         go.Bar(
             x=category_stats.index,
             y=category_stats['Total_Spent'],
             marker=dict(
-                color=colors[:len(category_stats)],
+                color=CHART_COLORS[:len(category_stats)],
                 line=dict(color='white', width=1)
             ),
             name='Total Spent',
@@ -490,7 +495,7 @@ def show_category_insights(df):
             x=category_stats.index,
             y=category_stats['Transaction_Count'],
             marker=dict(
-                color=colors[:len(category_stats)],
+                color=CHART_COLORS[:len(category_stats)],
                 line=dict(color='white', width=1)
             ),
             name='Transaction Count',
@@ -500,31 +505,31 @@ def show_category_insights(df):
         row=1, col=2
     )
     
-    # Modern layout
+    # Modern layout with theme
     fig.update_layout(
         height=550,
         showlegend=False,
         title=dict(
             text="Category Analysis Overview",
             x=0.5,
-            font=dict(size=20, family="Inter, sans-serif", color=MODERN_COLORS['text'])
+            font=dict(size=20, family="Inter, sans-serif", color='white')
         ),
-        paper_bgcolor=MODERN_COLORS['light'],
-        plot_bgcolor=MODERN_COLORS['light'],
-        font=dict(color=MODERN_COLORS['text'], family="Inter, sans-serif")
+        paper_bgcolor=THEME_COLORS["dark_green"],
+        plot_bgcolor=THEME_COLORS["dark_green"],
+        font=dict(color='white', family="Inter, sans-serif")
     )
     
-    # Update axes with modern styling - FIXED: using title_font instead of titlefont
+    # Update axes with theme styling
     fig.update_xaxes(
         tickangle=45,
-        gridcolor=MODERN_COLORS['grid'],
-        tickfont=dict(color=MODERN_COLORS['text']),
-        title_font=dict(color=MODERN_COLORS['text'])
+        gridcolor="rgba(255,255,255,0.1)",
+        tickfont=dict(color='white'),
+        title_font=dict(color='white')
     )
     fig.update_yaxes(
-        gridcolor=MODERN_COLORS['grid'],
-        tickfont=dict(color=MODERN_COLORS['text']),
-        title_font=dict(color=MODERN_COLORS['text'])
+        gridcolor="rgba(255,255,255,0.1)",
+        tickfont=dict(color='white'),
+        title_font=dict(color='white')
     )
     
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
@@ -547,125 +552,142 @@ def show_spending_patterns(df):
     """Analyze spending patterns by day of week and time with modern styling"""
     st.markdown("### 📅 Spending Patterns")
     
+    # Filter for expenses only
     spending_df = df[(df['amount'] < 0) & (df['category'] != 'Transfer')].copy()
     
     if spending_df.empty or 'date' not in spending_df.columns:
         st.info("No spending data with dates available.")
         return
     
-    # Add day of week and month analysis
+    # Ensure date is datetime
+    spending_df['date'] = pd.to_datetime(spending_df['date'], errors='coerce')
+    spending_df = spending_df.dropna(subset=['date'])
+    
+    if spending_df.empty:
+        st.info("No valid date data available after parsing.")
+        return
+
+    # Extract day of week and month
     spending_df['day_of_week'] = spending_df['date'].dt.day_name()
     spending_df['month_name'] = spending_df['date'].dt.month_name()
-    
-    # Create modern pattern analysis
+
+    # Define day and month order
+    day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    month_order = ['January', 'February', 'March', 'April', 'May', 'June',
+                   'July', 'August', 'September', 'October', 'November', 'December']
+
+    # Daily spending
+    daily_spending = spending_df.groupby('day_of_week')['amount'].sum().abs()
+    daily_spending = daily_spending.reindex(day_order, fill_value=0)
+    day_colors = [THEME_COLORS["pakistan_green"] if day in ['Saturday', 'Sunday'] 
+                  else THEME_COLORS["lapis_lazuli"] for day in daily_spending.index]
+
+    # Monthly spending
+    monthly_spending = spending_df.groupby('month_name')['amount'].sum().abs()
+    monthly_spending = monthly_spending.reindex([m for m in month_order if m in monthly_spending.index])
+
+    # Create subplot layout
     fig = make_subplots(
         rows=2, cols=2,
-        subplot_titles=('Spending by Day of Week', 'Spending by Month', 'Category vs Day Heatmap', 'Weekend vs Weekday'),
+        subplot_titles=('Spending by Day of Week', 'Spending by Month', 
+                        'Category vs Day Heatmap', 'Weekend vs Weekday'),
         specs=[[{"type": "bar"}, {"type": "bar"}],
                [{"type": "heatmap"}, {"type": "bar"}]],
         vertical_spacing=0.15,
         horizontal_spacing=0.12
     )
-    
-    # Day of week analysis with modern colors
-    day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    daily_spending = spending_df.groupby('day_of_week')['amount'].sum().abs()
-    daily_spending = daily_spending.reindex(day_order, fill_value=0)
-    
-    # Different colors for weekdays vs weekends
-    colors = [MODERN_COLORS['info'] if day in ['Saturday', 'Sunday'] else MODERN_COLORS['primary'] for day in daily_spending.index]
-    
+
+    # 1. Day of Week Bar
     fig.add_trace(
         go.Bar(
             x=daily_spending.index,
             y=daily_spending.values,
-            marker=dict(
-                color=colors,
-                line=dict(color='white', width=1)
-            ),
+            marker=dict(color=day_colors, line=dict(color='white', width=1)),
             hovertemplate="<b>%{x}</b><br>Total Spent: $%{y:,.2f}<extra></extra>"
         ),
         row=1, col=1
     )
-    
-    # Monthly spending with gradient
-    monthly_spending = spending_df.groupby('month_name')['amount'].sum().abs()
-    month_order = ['January', 'February', 'March', 'April', 'May', 'June',
-                   'July', 'August', 'September', 'October', 'November', 'December']
-    monthly_spending = monthly_spending.reindex([m for m in month_order if m in monthly_spending.index])
-    
+
+    # 2. Monthly Spending Bar
     fig.add_trace(
         go.Bar(
             x=monthly_spending.index,
             y=monthly_spending.values,
-            marker=dict(
-                color=MODERN_COLORS['danger'],
-                line=dict(color='white', width=1)
-            ),
+            marker=dict(color='#FF6B6B', line=dict(color='white', width=1)),
             hovertemplate="<b>%{x}</b><br>Total Spent: $%{y:,.2f}<extra></extra>"
         ),
         row=1, col=2
     )
-    
-    # Create modern heatmap data (category vs day of week)
-    if len(spending_df['category'].unique()) > 1:
+
+    # 3. Heatmap: Category vs Day of Week
+    categories = spending_df['category'].unique()
+    if len(categories) == 1:
+        # Handle single category case
+        heatmap_data = spending_df.groupby('day_of_week')['amount'].sum().abs()
+        heatmap_data = heatmap_data.reindex(day_order, fill_value=0).to_frame().T
+        heatmap_data.index = [categories[0]]  # Use category name as row index
+    elif len(categories) > 1:
         heatmap_data = spending_df.groupby(['category', 'day_of_week'])['amount'].sum().abs().unstack(fill_value=0)
         heatmap_data = heatmap_data.reindex(columns=day_order, fill_value=0)
-        
-        fig.add_trace(
-            go.Heatmap(
-                z=heatmap_data.values,
-                x=heatmap_data.columns,
-                y=heatmap_data.index,
-                colorscale=[[0, MODERN_COLORS['dark']], [0.5, MODERN_COLORS['secondary']], [1, MODERN_COLORS['danger']]],
-                hovertemplate="<b>%{y}</b><br>%{x}<br>Amount: $%{z:,.2f}<extra></extra>",
-                colorbar=dict(
-                    title="Amount ($)",
-                    titlefont=dict(color='white'),
-                    tickfont=dict(color='white')
-                )
-            ),
-            row=2, col=1
-        )
-    
-    # Category distribution by weekend vs weekday
+    else:
+        # Fallback for no data
+        heatmap_data = pd.DataFrame(0, index=['No Data'], columns=day_order)
+
+    # Add heatmap trace
+    fig.add_trace(
+        go.Heatmap(
+            z=heatmap_data.values,
+            x=heatmap_data.columns,
+            y=heatmap_data.index,
+            colorscale=[
+                [0, THEME_COLORS["dark_green"]],
+                [0.5, THEME_COLORS["midnight_green"]],
+                [1, '#FF6B6B']
+            ],
+            hovertemplate="<b>%{y}</b><br>%{x}<br>Amount: $%{z:,.2f}<extra></extra>",
+            colorbar=dict(
+                title=dict(
+                    text="Amount ($)",
+                    font=dict(color='white')
+                ),
+                tickfont=dict(color='white')
+            )
+        ),
+        row=2, col=1
+    )
+
+    # 4. Weekend vs Weekday by Category
     spending_df['is_weekend'] = spending_df['day_of_week'].isin(['Saturday', 'Sunday'])
-    weekend_categories = spending_df[spending_df['is_weekend']].groupby('category')['amount'].sum().abs()
-    weekday_categories = spending_df[~spending_df['is_weekend']].groupby('category')['amount'].sum().abs()
-    
-    all_categories = set(weekend_categories.index) | set(weekday_categories.index)
-    weekend_vals = [weekend_categories.get(cat, 0) for cat in all_categories]
-    weekday_vals = [weekday_categories.get(cat, 0) for cat in all_categories]
-    
+    weekend_spend = spending_df[spending_df['is_weekend']].groupby('category')['amount'].sum().abs()
+    weekday_spend = spending_df[~spending_df['is_weekend']].groupby('category')['amount'].sum().abs()
+    all_cats = sorted(set(weekend_spend.index) | set(weekday_spend.index))
+    weekend_vals = [weekend_spend.get(cat, 0) for cat in all_cats]
+    weekday_vals = [weekday_spend.get(cat, 0) for cat in all_cats]
+
     fig.add_trace(
         go.Bar(
-            x=list(all_categories),
+            x=all_cats,
             y=weekday_vals,
             name='Weekday',
-            marker=dict(
-                color=MODERN_COLORS['primary'],
-                line=dict(color='white', width=1)
-            ),
-            opacity=0.8
+            marker=dict(color=THEME_COLORS["lapis_lazuli"], line=dict(color='white', width=1)),
+            opacity=0.8,
+            hovertemplate="<b>Weekday</b><br>%{x}: $%{y:,.2f}<extra></extra>"
         ),
         row=2, col=2
     )
-    
     fig.add_trace(
         go.Bar(
-            x=list(all_categories),
+            x=all_cats,
             y=weekend_vals,
             name='Weekend',
-            marker=dict(
-                color=MODERN_COLORS['info'],
-                line=dict(color='white', width=1)
-            ),
-            opacity=0.8
+            marker=dict(color=THEME_COLORS["pakistan_green"], line=dict(color='white', width=1)),
+            opacity=0.8,
+            hovertemplate="<b>Weekend</b><br>%{x}: $%{y:,.2f}<extra></extra>"
         ),
         row=2, col=2
     )
-    
-    # Modern layout
+
+    # Update layout with theme
     fig.update_layout(
         height=850,
         title=dict(
@@ -681,38 +703,33 @@ def show_spending_patterns(df):
             xanchor="right",
             x=0.99
         ),
-        paper_bgcolor=MODERN_COLORS['dark'],
-        plot_bgcolor=MODERN_COLORS['dark'],
-        font=dict(color='white', family="Inter, sans-serif")
+        paper_bgcolor=THEME_COLORS["dark_green"],
+        plot_bgcolor=THEME_COLORS["dark_green"],
+        font=dict(color='white', family="Inter, sans-serif"),
+        barmode='group',
+        margin=dict(t=80, l=60, r=60, b=100)
     )
-    
-    # Update axes with modern styling - FIXED: using title_font instead of titlefont
-    fig.update_xaxes(
-        tickangle=45, 
-        row=2, col=2,
-        gridcolor="rgba(255,255,255,0.1)",
-        tickfont=dict(color='white'),
-        title_font=dict(color='white')
-    )
-    
-    # Update all axes
+
+    # Update axes styling
     for row in [1, 2]:
         for col in [1, 2]:
             fig.update_xaxes(
-                gridcolor="rgba(255,255,255,0.1)",
                 tickfont=dict(color='white'),
                 title_font=dict(color='white'),
+                gridcolor="rgba(255,255,255,0.1)",
+                tickangle=45 if row == 2 else 0,
                 row=row, col=col
             )
             fig.update_yaxes(
-                gridcolor="rgba(255,255,255,0.1)",
                 tickfont=dict(color='white'),
                 title_font=dict(color='white'),
+                gridcolor="rgba(255,255,255,0.1)",
                 row=row, col=col
             )
-    
+
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
+    
 def show_enhanced_transaction_table(df, uploaded_files):
     """Enhanced transaction table with better filtering and modern styling"""
     st.markdown("### 📋 Transaction Explorer")
@@ -766,10 +783,10 @@ def show_enhanced_transaction_table(df, uploaded_files):
                 (filtered_df['date'].dt.date <= end_date)
             ]
     
-    # Show filter results with modern styling
+    # Show filter results with theme styling
     st.markdown(f"""
     <div style="
-        background: linear-gradient(135deg, {MODERN_COLORS['primary']} 0%, {MODERN_COLORS['secondary']} 100%);
+        background: linear-gradient(135deg, {THEME_COLORS['lapis_lazuli']} 0%, {THEME_COLORS['midnight_green']} 100%);
         padding: 1.2rem;
         border-radius: 12px;
         color: white;
@@ -800,7 +817,7 @@ def show_enhanced_transaction_table(df, uploaded_files):
         height=400
     )
     
-    # Modern quick stats cards
+    # Modern quick stats cards with theme
     if not filtered_df.empty:
         col1, col2, col3, col4 = st.columns(4)
         
@@ -810,10 +827,10 @@ def show_enhanced_transaction_table(df, uploaded_files):
         expense_count = len(filtered_df[filtered_df['amount'] < 0])
         
         metrics = [
-            ("Total Amount", total_amount, "💰", MODERN_COLORS['primary']),
-            ("Average Amount", avg_amount, "📊", MODERN_COLORS['secondary']),
-            ("Income Transactions", income_count, "📈", MODERN_COLORS['success']),
-            ("Expense Transactions", expense_count, "📉", MODERN_COLORS['danger'])
+            ("Total Amount", total_amount, "💰", THEME_COLORS["lapis_lazuli"]),
+            ("Average Amount", avg_amount, "📊", THEME_COLORS["midnight_green"]),
+            ("Income Transactions", income_count, "📈", THEME_COLORS["lapis_lazuli"]),
+            ("Expense Transactions", expense_count, "📉", "#FF6B6B")
         ]
         
         for i, (label, value, icon, color) in enumerate(metrics):
@@ -852,6 +869,11 @@ def show_all_enhanced_visualizations(df, uploaded_files):
     # File summary for multiple files
     if len(uploaded_files) > 1 and 'source_file' in df.columns:
         show_file_summary(df)
+        st.markdown("---")
+    
+    # Individual file analysis (NEW)
+    if len(uploaded_files) > 1 and 'source_file' in df.columns:
+        show_individual_file_analysis(df, uploaded_files)
         st.markdown("---")
     
     # Comprehensive spending overview

@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Tuple, Optional
 from fuzzywuzzy import fuzz
+from datetime import date
 
 
 class InvestmentTracker:
@@ -240,7 +241,14 @@ class InvestmentTracker:
                 positions_df = positions_df[positions_df['quantity'] > 0]
                 
                 if not positions_df.empty:
-                    # Calculate derived values
+                    # Calculate derived values - Fix dtype warnings by explicitly converting to float
+                    positions_df = positions_df.copy()  # Ensure we're working with a copy
+                    
+                    # Convert numeric columns to float explicitly to avoid dtype warnings
+                    numeric_cols = ['quantity', 'cost_basis']
+                    for col in numeric_cols:
+                        positions_df[col] = pd.to_numeric(positions_df[col], errors='coerce').astype(float)
+                    
                     positions_df['average_price'] = positions_df['cost_basis'] / positions_df['quantity']
                     positions_df['current_price'] = positions_df['average_price']  # Placeholder
                     positions_df['market_value'] = positions_df['quantity'] * positions_df['current_price']
@@ -482,6 +490,12 @@ class InvestmentTracker:
         df = df[available_cols + [col for col in df.columns if col not in required_cols]]
         debug_info.append(f"📊 Filtered DataFrame columns: {df.columns.tolist()}")
         
+        # Convert numeric columns to appropriate dtypes to avoid warnings
+        numeric_cols = ['quantity', 'average_price', 'current_price', 'current_value']
+        for col in numeric_cols:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').astype(float)
+        
         # Calculate additional metrics
         if 'average_price' in df.columns and 'quantity' in df.columns:
             df['cost_basis'] = df['average_price'] * df['quantity']
@@ -589,8 +603,8 @@ class InvestmentTracker:
                     positions[symbol] = {
                         'symbol': symbol,
                         'description': row.get('description', symbol),
-                        'quantity': 0,
-                        'cost_basis': 0,
+                        'quantity': 0.0,  # Explicitly use float
+                        'cost_basis': 0.0,  # Explicitly use float
                         'transactions': 0
                     }
                 
@@ -622,15 +636,21 @@ class InvestmentTracker:
                     st.warning("No current positions found in the transaction history")
                     return False
                 
+                # Ensure all numeric columns are float type to avoid dtype warnings
+                positions_df = positions_df.copy()  # Ensure we're working with a copy
+                numeric_cols = ['quantity', 'cost_basis', 'transactions']
+                for col in numeric_cols:
+                    positions_df[col] = pd.to_numeric(positions_df[col], errors='coerce').astype(float)
+                
                 # Calculate current values
                 positions_df['average_price'] = positions_df.apply(
-                    lambda x: x['cost_basis'] / x['quantity'] if x['quantity'] > 0 else 0, axis=1)
+                    lambda x: x['cost_basis'] / x['quantity'] if x['quantity'] > 0 else 0.0, axis=1)
                 
                 # Placeholder for current price (requires market data)
                 positions_df['current_price'] = positions_df['average_price']
                 positions_df['market_value'] = positions_df['quantity'] * positions_df['current_price']
-                positions_df['gain_loss'] = 0
-                positions_df['gain_loss_pct'] = 0
+                positions_df['gain_loss'] = 0.0
+                positions_df['gain_loss_pct'] = 0.0
                 
                 # Add source information
                 positions_df['source'] = file_name
@@ -697,6 +717,12 @@ class InvestmentTracker:
             debug_info.append(f"🗺️ Applied column mapping: {column_mapping}")
             debug_info.append(f"🆕 Columns after mapping: {df.columns.tolist()}")
             
+            # Convert numeric columns to appropriate dtypes to avoid warnings
+            numeric_cols = ['quantity', 'average_price', 'current_price', 'market_value']
+            for col in numeric_cols:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors='coerce').astype(float)
+            
             # Calculate metrics if columns exist
             if 'average_price' in df.columns and 'quantity' in df.columns:
                 df['cost_basis'] = df['average_price'] * df['quantity']
@@ -741,111 +767,155 @@ class InvestmentTracker:
             return False
 
     def _add_to_portfolio(self, new_df):
-        """Add new holdings to portfolio with detailed debugging"""
+        """Add new holdings to portfolio. Replaces data for existing symbols."""
         debug_info = []
-        debug_info.append("➕ Starting _add_to_portfolio")
+        debug_info.append("\n Starting _add_to_portfolio")
         
         if new_df.empty:
             debug_info.append("⚠️ Empty DataFrame received")
             st.warning("No data to add to portfolio")
+            # Still update historical values even if new_df is empty, 
+            # to potentially record an empty portfolio state if needed.
+            self._update_historical_values() 
             return
-        
-        # Log incoming columns
-        debug_info.append(f"📥 Incoming DataFrame columns: {new_df.columns.tolist()}")
-        debug_info.append(f"📥 Incoming DataFrame shape: {new_df.shape}")
-        
+
         # Ensure required columns exist
         required_columns = ['symbol', 'description', 'quantity', 'market_value']
         missing_columns = [col for col in required_columns if col not in new_df.columns]
-        
         if missing_columns:
             debug_info.append(f"❌ Missing required columns: {missing_columns}")
             st.error(f"Missing required columns: {missing_columns}")
-            st.error(f"Available columns: {list(new_df.columns)}")
+            # Update historical with current state (which might be partial or empty)
+            self._update_historical_values() 
             return
+
+        new_df = new_df.copy()
         
-        # Fill missing optional columns with defaults
-        if 'cost_basis' not in new_df.columns:
-            debug_info.append("ℹ️ cost_basis not found - using market_value")
-            new_df['cost_basis'] = new_df['market_value']
-        if 'current_price' not in new_df.columns:
-            debug_info.append("ℹ️ current_price not found - calculating from market_value/quantity")
-            new_df['current_price'] = new_df['market_value'] / new_df['quantity']
-        if 'average_price' not in new_df.columns:
-            debug_info.append("ℹ️ average_price not found - calculating from cost_basis/quantity")
-            new_df['average_price'] = new_df['cost_basis'] / new_df['quantity']
-        if 'gain_loss' not in new_df.columns:
-            debug_info.append("ℹ️ gain_loss not found - calculating from market_value - cost_basis")
-            new_df['gain_loss'] = new_df['market_value'] - new_df['cost_basis']
-        if 'gain_loss_pct' not in new_df.columns:
-            debug_info.append("ℹ️ gain_loss_pct not found - calculating percentage")
-            new_df['gain_loss_pct'] = (new_df['gain_loss'] / new_df['cost_basis']) * 100
-        
+        # Convert columns to correct types
+        numeric_cols = ['quantity', 'market_value', 'cost_basis', 'current_price', 'average_price', 'gain_loss', 'gain_loss_pct']
+        for col in numeric_cols:
+            if col in new_df.columns:
+                new_df[col] = pd.to_numeric(new_df[col], errors='coerce')
+        new_df['report_date'] = pd.to_datetime(new_df.get('report_date', pd.NaT), errors='coerce')
+
         if self.portfolio.empty:
             debug_info.append("🆕 Portfolio is empty - creating new portfolio")
-            self.portfolio = new_df.copy()
+            self.portfolio = new_df
             st.success(f"Added {len(new_df)} new positions to portfolio")
         else:
-            debug_info.append("🔄 Portfolio exists - updating positions")
             updated_positions = 0
             new_positions = 0
             
-            for idx, row in new_df.iterrows():
-                symbol = row['symbol']
-                existing_idx = self.portfolio[self.portfolio['symbol'] == symbol].index
-                
-                if not existing_idx.empty:
-                    debug_info.append(f"🔄 Updating existing position: {symbol}")
-                    idx = existing_idx[0]
-                    old_quantity = self.portfolio.at[idx, 'quantity']
-                    old_cost_basis = self.portfolio.at[idx, 'cost_basis']
-                    
-                    new_quantity = old_quantity + row['quantity']
-                    new_cost_basis = old_cost_basis + row['cost_basis']
-                    
-                    self.portfolio.at[idx, 'quantity'] = new_quantity
-                    self.portfolio.at[idx, 'cost_basis'] = new_cost_basis
-                    self.portfolio.at[idx, 'average_price'] = new_cost_basis / new_quantity if new_quantity > 0 else 0
-                    
-                    if 'current_price' in row and pd.notnull(row['current_price']):
-                        self.portfolio.at[idx, 'current_price'] = row['current_price']
-                        self.portfolio.at[idx, 'market_value'] = new_quantity * row['current_price']
-                        self.portfolio.at[idx, 'gain_loss'] = self.portfolio.at[idx, 'market_value'] - new_cost_basis
-                        self.portfolio.at[idx, 'gain_loss_pct'] = (self.portfolio.at[idx, 'gain_loss'] / new_cost_basis) * 100 if new_cost_basis > 0 else 0
-                    
-                    updated_positions += 1
-                else:
-                    debug_info.append(f"🆕 Adding new position: {symbol}")
-                    self.portfolio = pd.concat([self.portfolio, row.to_frame().T], ignore_index=True)
-                    new_positions += 1
+            # --- NEW LOGIC: Identify symbols in new data ---
+            new_symbols = set(new_df['symbol'])
             
-            st.success(f"Updated {updated_positions} existing positions, added {new_positions} new positions")
-        
-        # Update historical values
-        self._update_historical_values()
+            # --- Keep rows for symbols NOT present in the new file ---
+            rows_to_keep = self.portfolio[~self.portfolio['symbol'].isin(new_symbols)]
+            
+            # --- Add/Replace rows from the new file ---
+            # new_df already contains the new or updated data for symbols
+            # Combine kept rows with new/updated rows
+            self.portfolio = pd.concat([rows_to_keep, new_df], ignore_index=True)
+            
+            # --- Provide feedback ---
+            # Count how many were actually new vs. updated
+            # This is a simplification; exact count needs tracking during iteration like before,
+            # but the outcome (portfolio updated with new_df data) is achieved.
+            # For detailed debug, you could iterate, but the concat approach is cleaner for replacement.
+            st.success(f"Portfolio updated with data from {len(new_df)} holdings in the uploaded file.")
+            
+        self._update_historical_values() # Always call after modifying self.portfolio
         debug_info.append("✅ Portfolio updated successfully")
         
-        # Show debug info in expander
         with st.expander("Portfolio Update Details"):
             for entry in debug_info:
                 st.text(entry)
-    
+
+
+    # --- REPLACE the existing _update_historical_values method in Pasted_Text_1753637807170.txt ---
     def _update_historical_values(self):
-        """Update historical portfolio values"""
-        if self.portfolio.empty:
-            return
-            
-        total_value = self.portfolio['market_value'].sum()
-        new_entry = pd.DataFrame({
-            'date': [datetime.now().date()],
-            'total_value': [total_value],
-            'num_holdings': [len(self.portfolio)]
-        })
+        """Update historical portfolio values, avoiding duplicate entries for the same day if portfolio state hasn't changed."""
         
+        # --- Record Total Portfolio Value ---
+        total_value = 0.0
+        total_quantity = 0.0
+        if not self.portfolio.empty:
+            # Ensure market_value is numeric for sum
+            self.portfolio['market_value'] = pd.to_numeric(self.portfolio['market_value'], errors='coerce')
+            total_value = float(self.portfolio['market_value'].sum())
+            
+            # Ensure quantity is numeric for sum (optional)
+            if 'quantity' in self.portfolio.columns:
+                self.portfolio['quantity'] = pd.to_numeric(self.portfolio['quantity'], errors='coerce')
+                total_quantity = float(self.portfolio['quantity'].sum())
+
+        today = date.today()
+        new_total_entry = pd.DataFrame({
+            'date': [today],
+            'symbol': ['PORTFOLIO_TOTAL'],
+            'market_value': [total_value],
+            'quantity': [total_quantity] # Optional
+        })
+
+        # --- Record Individual Asset Values ---
+        asset_entries = pd.DataFrame() # Initialize as empty
+        if not self.portfolio.empty:
+            # Ensure 'symbol' and 'market_value' exist
+            if 'symbol' in self.portfolio.columns and 'market_value' in self.portfolio.columns:
+                # Prepare asset-specific entries
+                asset_columns = ['symbol', 'market_value']
+                if 'quantity' in self.portfolio.columns:
+                    asset_columns.append('quantity')
+                
+                asset_entries = self.portfolio[asset_columns].copy()
+                asset_entries['date'] = today
+                
+                # Reorder columns to match expected structure if needed
+                final_asset_columns = ['date', 'symbol', 'market_value']
+                if 'quantity' in asset_entries.columns:
+                    final_asset_columns.append('quantity')
+                asset_entries = asset_entries[final_asset_columns]
+            else:
+                print("Warning: Missing 'symbol' or 'market_value' in portfolio for history update.")
+
+        # Combine total and asset entries for the current snapshot
+        new_entries = pd.concat([new_total_entry, asset_entries], ignore_index=True) if not asset_entries.empty else new_total_entry
+
+        # --- Append to historical values with Balanced Approach ---
         if self.historical_values.empty:
-            self.historical_values = new_entry
+            self.historical_values = new_entries
         else:
-            self.historical_values = pd.concat([self.historical_values, new_entry], ignore_index=True)
+            # --- Balanced Approach Logic ---
+            existing_today_total = self.historical_values[
+                (self.historical_values['date'] == today) &
+                (self.historical_values['symbol'] == 'PORTFOLIO_TOTAL')
+            ]
+
+            # Check if the total portfolio value has changed
+            if not existing_today_total.empty:
+                existing_total_value = existing_today_total['market_value'].iloc[0]
+                # Use np.isclose for safer float comparison, with a small tolerance
+                if not np.isclose(existing_total_value, total_value, atol=1e-8): 
+                    # Total value changed, update the snapshot for today
+                    # 1. Remove old snapshot for today
+                    self.historical_values = self.historical_values[
+                        self.historical_values['date'] != today
+                    ]
+                    # 2. Append the new snapshot for today
+                    self.historical_values = pd.concat([self.historical_values, new_entries], ignore_index=True)
+                    # print(f"Updated historical snapshot for {today} (value changed from {existing_total_value} to {total_value})")
+                # else: Total value is the same, do nothing (avoid unnecessary replacement/appending)
+                #     print(f"Skipped historical snapshot update for {today} (value unchanged at {total_value})")
+            else:
+                # No entry for today yet, append the new snapshot
+                self.historical_values = pd.concat([self.historical_values, new_entries], ignore_index=True)
+                # print(f"Added initial historical snapshot for {today}")
+
+        # Optional: Sort by date for cleaner data (though plotting handles sorting)
+        # self.historical_values.sort_values(by=['date', 'symbol'], inplace=True)
+        # Optional: Reset index
+        # self.historical_values.reset_index(drop=True, inplace=True)
+
     
     def calculate_portfolio_summary(self):
         """Calculate portfolio summary statistics with error handling"""
@@ -863,17 +933,21 @@ class InvestmentTracker:
             return None
         
         try:
+            # Ensure numeric columns are float type
+            for col in required_columns:
+                self.portfolio[col] = pd.to_numeric(self.portfolio[col], errors='coerce').astype(float)
+            
             summary = {
-                'total_value': self.portfolio['market_value'].sum(),
-                'total_cost_basis': self.portfolio['cost_basis'].sum(),
-                'total_gain_loss': self.portfolio['gain_loss'].sum(), 
+                'total_value': float(self.portfolio['market_value'].sum()),
+                'total_cost_basis': float(self.portfolio['cost_basis'].sum()),
+                'total_gain_loss': float(self.portfolio['gain_loss'].sum()), 
                 'num_positions': len(self.portfolio),
                 'num_brokerages': self.portfolio['brokerage'].nunique() if 'brokerage' in self.portfolio.columns else 1
             }
             
             summary['gain_loss_pct'] = (
                 (summary['total_gain_loss'] / summary['total_cost_basis']) * 100 
-                if summary['total_cost_basis'] > 0 else 0
+                if summary['total_cost_basis'] > 0 else 0.0
             )
             
             return summary
@@ -890,7 +964,7 @@ class InvestmentTracker:
             return None
         
         # Calculate returns
-        returns = self.historical_values.sort_values('date')
+        returns = self.historical_values.sort_values('date').copy()
         returns['daily_return'] = returns['total_value'].pct_change()
         
         # Remove first row (no return)
@@ -900,31 +974,34 @@ class InvestmentTracker:
             return None
         
         # Calculate metrics
-        avg_daily_return = returns['daily_return'].mean()
-        std_daily_return = returns['daily_return'].std()
-        total_return = (returns['total_value'].iloc[-1] / returns['total_value'].iloc[0]) - 1
+        avg_daily_return = float(returns['daily_return'].mean())
+        std_daily_return = float(returns['daily_return'].std())
+        total_return = float((returns['total_value'].iloc[-1] / returns['total_value'].iloc[0]) - 1)
         
         # Annualize metrics
         trading_days = 252
-        annualized_return = (1 + avg_daily_return) ** trading_days - 1
-        annualized_volatility = std_daily_return * np.sqrt(trading_days)
+        annualized_return = float((1 + avg_daily_return) ** trading_days - 1)
+        annualized_volatility = float(std_daily_return * np.sqrt(trading_days))
         
         # Calculate Sharpe ratio
-        sharpe_ratio = (annualized_return - self.risk_free_rate) / annualized_volatility
+        sharpe_ratio = float((annualized_return - self.risk_free_rate) / annualized_volatility) if annualized_volatility > 0 else 0.0
         
         # Calculate Sortino ratio (only downside volatility)
         downside_returns = returns[returns['daily_return'] < 0]['daily_return']
-        downside_volatility = downside_returns.std() * np.sqrt(trading_days)
-        sortino_ratio = (annualized_return - self.risk_free_rate) / downside_volatility if downside_volatility > 0 else 0
+        if not downside_returns.empty:
+            downside_volatility = float(downside_returns.std() * np.sqrt(trading_days))
+            sortino_ratio = float((annualized_return - self.risk_free_rate) / downside_volatility) if downside_volatility > 0 else 0.0
+        else:
+            sortino_ratio = 0.0
         
         # Calculate maximum drawdown
         cumulative_returns = (1 + returns['daily_return']).cumprod()
         peak = cumulative_returns.expanding(min_periods=1).max()
         drawdown = (cumulative_returns - peak) / peak
-        max_drawdown = drawdown.min()
+        max_drawdown = float(drawdown.min())
         
         # Calculate Calmar ratio
-        calmar_ratio = annualized_return / abs(max_drawdown) if max_drawdown < 0 else 0
+        calmar_ratio = float(annualized_return / abs(max_drawdown)) if max_drawdown < 0 else 0.0
         
         return {
             'sharpe_ratio': sharpe_ratio,
@@ -975,7 +1052,15 @@ class InvestmentTracker:
         """Get top performing positions"""
         if self.portfolio.empty:
             return pd.DataFrame()
+
+        # Convert gain_loss_pct to numeric in case it's of object/string dtype
+        self.portfolio['gain_loss_pct'] = pd.to_numeric(self.portfolio['gain_loss_pct'], errors='coerce')
+
+        # Drop rows where conversion failed (optional, but safer)
+        self.portfolio = self.portfolio.dropna(subset=['gain_loss_pct'])
+
         return self.portfolio.nlargest(n, 'gain_loss_pct')
+
     
     def get_bottom_performers(self, n=5):
         """Get bottom performing positions"""
@@ -1017,7 +1102,9 @@ def parse_investment_documents(uploaded_files, doc_type, brokerage):
             elif doc_type == "PDF":
                 if brokerage == "Robinhood":
                     file_info.append("🔧 Using Robinhood PDF parser")
-                    success = tracker.parse_robinhood_pdf(uploaded_file)
+                    success, debug_log = tracker.parse_robinhood_pdf(uploaded_file)
+                    if not success:
+                        file_info.extend(debug_log)
                 else:
                     file_info.append(f"⚠️ PDF parsing for {brokerage} not implemented")
                     success = False

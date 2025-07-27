@@ -4,14 +4,31 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 from utils.theme import THEME_COLORS, THEME_GRADIENTS, get_gradient_color, get_theme_background, get_theme_border, get_theme_text_color
 
-def hex_to_rgba(hex_color, alpha=0.6):
+def hex_to_rgba(hex_color, alpha=0.4):
     """Convert hex color to RGBA with specified alpha transparency."""
     hex_color = hex_color.lstrip('#')
     r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
     return f"rgba({r}, {g}, {b}, {alpha})"
 
+def create_gradient_color(color1, color2, position=0.5):
+    """Create a gradient between two colors at a given position."""
+    # Convert hex to RGB
+    def hex_to_rgb(hex_color):
+        hex_color = hex_color.lstrip('#')
+        return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+    
+    rgb1 = hex_to_rgb(color1)
+    rgb2 = hex_to_rgb(color2)
+    
+    # Interpolate
+    r = int(rgb1[0] + (rgb2[0] - rgb1[0]) * position)
+    g = int(rgb1[1] + (rgb2[1] - rgb1[1]) * position)
+    b = int(rgb1[2] + (rgb2[2] - rgb1[2]) * position)
+    
+    return f"#{r:02x}{g:02x}{b:02x}"
+
 def show_sankey_flow_diagram(df):
-    """Create a modern Sankey diagram with flows starting from source color, transparent in the middle, transitioning to target color."""
+    """Create a premium Sankey diagram matching the investment plot aesthetic."""
     st.markdown("### 💰 Money Flow Analysis")
     
     # Prepare data for Sankey diagram
@@ -22,23 +39,33 @@ def show_sankey_flow_diagram(df):
         st.info("No income or expense data available for flow analysis.")
         return
     
-    # Color palette matching the image
+    # Premium color palette - darker and more sophisticated
     income_colors = [
-        "#0A6397",  # Light blue (Paycheck)
-        "#5BA3F5",  # Medium blue
-        "#6CB6FF",  # Bright blue
-        "#7DC9FF",  # Light cyan
-        "#8EDCFF"   # Very light cyan
+        "#1E5F74",  # Darker deep blue
+        "#7A1E4B",  # Darker deep magenta
+        "#C26D00",  # Darker warm orange
+        "#9A2F14",  # Darker deep red
+        "#456B58",  # Darker sage green  
+        "#4E5A6B",  # Darker blue gray
+        "#354A32",  # Darker forest green
+        "#5A0890",  # Darker purple
+        "#C41E62",  # Darker pink
+        "#3399CC"   # Darker light blue
     ]
     
     expense_colors = [
-        "#FF6B6B",  # Red (Shopping)
-        "#F1C40F",  # Yellow (Housing)
-        "#E91E63",  # Pink (Financial)
-        "#4A90E2",  # Light blue (Bills & Utilities)
-        "#FF9800",  # Orange (Food & Dining)
-        "#9B59B6",  # Purple (Travel & Lifestyle)
-        "#2ECC71"   # Green (Savings)
+        "#CC4545",  # Darker coral red
+        "#3BA89D",  # Darker teal
+        "#3690A8",  # Darker sky blue
+        "#739E87",  # Darker mint
+        "#CC9B3D",  # Darker golden yellow
+        "#CC79C4",  # Darker pink
+        "#4380CC",  # Darker blue
+        "#4A1F9E",  # Darker purple
+        "#00A8A9",  # Darker cyan
+        "#CC7A34",  # Darker orange
+        "#0D8566",  # Darker green
+        "#BB4A1C"   # Darker red orange
     ]
     
     # Create nodes and links
@@ -47,43 +74,43 @@ def show_sankey_flow_diagram(df):
     node_colors = []
     link_colors = []
     
-    # Income sources
+    # Income sources with enhanced styling
     income_sources = {}
     total_income_amount = income_df['amount'].sum() if not income_df.empty else 0
     if not income_df.empty:
         income_by_source = income_df.groupby('description')['amount'].sum().sort_values(ascending=False)
         for i, (source, amount) in enumerate(income_by_source.items()):
-            source_name = source[:25] + "..." if len(source) > 25 else source
+            source_name = source[:20] + "..." if len(source) > 20 else source
             percentage = (amount / total_income_amount * 100) if total_income_amount > 0 else 0
             income_sources[source] = len(nodes)
-            nodes.append(f"{source_name}\n${amount:,.2f} ({percentage:.2f}%)")
+            nodes.append(f"{source_name}<br>${amount:,.0f} ({percentage:.1f}%)")
             node_colors.append(income_colors[i % len(income_colors)])
     
-    # Add "Available Funds" node
+    # Central "Available Funds" node with prominent styling
     available_funds_idx = len(nodes)
-    nodes.append(f"Available Funds\n${total_income_amount:,.2f} (100%)")
-    node_colors.append("#5BA3F5")  # Darker blue like "Income" in the image
+    nodes.append(f"Available Funds<br>${total_income_amount:,.0f}")
+    node_colors.append("#2C3E50")  # Darker blue-gray for central node
     
-    # Expense categories
+    # Expense categories with refined colors
     expense_categories = {}
     if not expense_df.empty:
         expense_by_category = expense_df.groupby('category')['amount'].sum().abs().sort_values(ascending=False)
         for i, (category, amount) in enumerate(expense_by_category.items()):
             percentage = (amount / total_income_amount * 100) if total_income_amount > 0 else 0
             expense_categories[category] = len(nodes)
-            nodes.append(f"{category}\n${amount:,.2f} ({percentage:.2f}%)")
+            nodes.append(f"{category}<br>${amount:,.0f} ({percentage:.1f}%)")
             node_colors.append(expense_colors[i % len(expense_colors)])
     
-    # Net Savings
+    # Net Savings with premium green
     total_expense_amount = expense_df['amount'].abs().sum() if not expense_df.empty else 0
     net_income = total_income_amount - total_expense_amount
     if net_income > 0:
         savings_idx = len(nodes)
         percentage = (net_income / total_income_amount * 100) if total_income_amount > 0 else 0
-        nodes.append(f"Net Savings\n${net_income:,.2f} ({percentage:.2f}%)")
-        node_colors.append("#04622B")  # Green for savings
+        nodes.append(f"Net Savings<br>${net_income:,.0f} ({percentage:.1f}%)")
+        node_colors.append("#1E8449")  # Darker premium green
     
-    # Links from income sources to Available Funds
+    # Enhanced links with gradient effects
     if not income_df.empty:
         for i, (source, amount) in enumerate(income_by_source.items()):
             source_idx = income_sources[source]
@@ -92,9 +119,11 @@ def show_sankey_flow_diagram(df):
                 'target': available_funds_idx,
                 'value': amount
             })
-            link_colors.append(hex_to_rgba(node_colors[source_idx], 0.6))
+            # Create gradient from source color to central node
+            source_color = node_colors[source_idx]
+            link_colors.append(hex_to_rgba(source_color, 0.4))
     
-    # Links from Available Funds to expense categories
+    # Links from Available Funds to expenses with enhanced gradients
     if not expense_df.empty and total_income_amount > 0:
         for i, (category, amount) in enumerate(expense_by_category.items()):
             links.append({
@@ -102,30 +131,35 @@ def show_sankey_flow_diagram(df):
                 'target': expense_categories[category],
                 'value': amount
             })
-            link_colors.append(hex_to_rgba(node_colors[available_funds_idx], 0.6))
+            # Gradient from central node to target
+            target_color = node_colors[expense_categories[category]]
+            link_colors.append(hex_to_rgba(target_color, 0.3))
     
-    # Link for savings
+    # Savings link with special treatment
     if net_income > 0:
         links.append({
             'source': available_funds_idx,
             'target': savings_idx,
             'value': net_income
         })
-        link_colors.append(hex_to_rgba(node_colors[available_funds_idx], 0.6))
+        link_colors.append(hex_to_rgba("#1E8449", 0.5))
     
     if not links:
         st.info("Insufficient data to create money flow diagram.")
         return
     
-    # Create Sankey diagram
+    # Create enhanced Sankey diagram
     fig = go.Figure(data=[go.Sankey(
+        arrangement="snap",
         node=dict(
-            pad=25,
-            thickness=30,
-            line=dict(color="rgba(255,255,255,0.8)", width=0),
+            pad=35,  # Increased padding for better spacing
+            thickness=25,  # Slightly thinner nodes for elegance
+            line=dict(color="rgba(255,255,255,0.4)", width=2),  # Subtle border
             label=nodes,
             color=node_colors,
-            hovertemplate="<b>%{label}</b><br>Total Flow: $%{value:,.0f}<extra></extra>",
+            hovertemplate="<b>%{label}</b><br>Total: $%{value:,.0f}<extra></extra>",
+            x=[0.01 if i < len(income_sources) else 0.5 if i == available_funds_idx else 0.99 for i in range(len(nodes))],
+            y=[i/(len(income_sources)-1) if i < len(income_sources) else 0.5 if i == available_funds_idx else (i-len(income_sources)-1)/(len(nodes)-len(income_sources)-2) if i > available_funds_idx else 0.5 for i in range(len(nodes))]
         ),
         link=dict(
             source=[link['source'] for link in links],
@@ -134,108 +168,139 @@ def show_sankey_flow_diagram(df):
             color=link_colors,
             hovertemplate="<b>%{source.label}</b> → <b>%{target.label}</b><br>" +
                          "Amount: $%{value:,.0f}<extra></extra>",
-            line=dict(width=0.0, color="rgba(255,255,255,0.2)")
+            line=dict(width=1, color="rgba(255,255,255,0.15)")  # Subtle link borders
         )
     )])
     
-    # Update layout to match the image
+    # Premium layout styling to match investment plot
     fig.update_layout(
         title=dict(
             text="Financial Flow: Income → Available Funds → Expenses",
-            x=0.5,
-            font=dict(size=20, family="Inter, -apple-system, BlinkMacSystemFont, sans-serif", color="#000000")
+            x=0.2,
+            font=dict(
+                size=24, 
+                family="Inter, -apple-system, BlinkMacSystemFont, sans-serif", 
+                color="white"
+            ),
+            pad=dict(t=20)
         ),
-        height=650,
-        paper_bgcolor="white",
-        plot_bgcolor="aliceblue",
-        margin=dict(l=40, r=40, t=80, b=40),
+        height=700,  # Increased height for better proportions
+        paper_bgcolor=THEME_COLORS["dark_green"],
+        plot_bgcolor=THEME_COLORS["dark_green"],
+        margin=dict(l=50, r=50, t=100, b=50),  # Better margins
         hoverlabel=dict(
             font=dict(
-                color="black",
-                size=14,
+                color="white",
+                size=13,
                 family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
             ),
-            bgcolor="rgba(255, 255, 255, 0.95)",
-            bordercolor="rgba(0,0,0,0.2)",
-            align="left"
+            bgcolor="rgba(0, 0, 0, 0.85)",
+            bordercolor="rgba(255,255,255,0.3)",
+            align="left",
+            namelength=-1
         ),
         font=dict(
             family="Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-            color="black",
-            size=12
+            color="white",
+            size=11
+        ),
+        # Add subtle animations
+        transition=dict(
+            duration=800,
+            easing="cubic-in-out"
         )
     )
     
-    # Display the Sankey diagram
+    # Display with enhanced config
     st.plotly_chart(fig, use_container_width=True, config={
         'displayModeBar': False,
-        'displaylogo': False
+        'displaylogo': False,
+        'doubleClick': 'reset',
+        'showTips': False
     })
     
-    # Summary cards
+    # Premium summary cards with enhanced gradients
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown(f"""
         <div style="
-            background: linear-gradient(135deg, #4A90E2 0%, #5BA3F5 100%);
-            padding: 1.5rem;
-            border-radius: 12px;
+            background: linear-gradient(135deg, #2E86AB 0%, #4A9EDF 50%, #6BB6FF 100%);
+            padding: 2rem;
+            border-radius: 16px;
             color: white;
             text-align: center;
-            box-shadow: 0 8px 32px rgba(74, 144, 226, 0.3);
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
+            box-shadow: 0 12px 40px rgba(46, 134, 171, 0.4);
+            border: 2px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(15px);
+            position: relative;
+            overflow: hidden;
         ">
-            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">💰</div>
-            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem; font-weight: 500;">Income Sources</div>
-            <div style="font-size: 1.8rem; font-weight: bold;">{len(income_sources)}</div>
-            <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.3rem;">${total_income_amount:,.0f} total</div>
+            <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; 
+                        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);"></div>
+            <div style="position: relative; z-index: 2;">
+                <div style="font-size: 3rem; margin-bottom: 0.8rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">💰</div>
+                <div style="font-size: 1rem; opacity: 0.95; margin-bottom: 0.8rem; font-weight: 600; letter-spacing: 0.5px;">Income Sources</div>
+                <div style="font-size: 2.2rem; font-weight: 800; margin-bottom: 0.3rem;">{len(income_sources)}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9; font-weight: 500;">${total_income_amount:,.0f} total</div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
     
     with col2:
         st.markdown(f"""
         <div style="
-            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
-            padding: 1.5rem;
-            border-radius: 12px;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8787 50%, #FFA8A8 100%);
+            padding: 2rem;
+            border-radius: 16px;
             color: white;
             text-align: center;
-            box-shadow: 0 8px 32px rgba(255, 107, 107, 0.3);
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
+            box-shadow: 0 12px 40px rgba(255, 107, 107, 0.4);
+            border: 2px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(15px);
+            position: relative;
+            overflow: hidden;
         ">
-            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📊</div>
-            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem; font-weight: 500;">Expense Categories</div>
-            <div style="font-size: 1.8rem; font-weight: bold;">{len(expense_categories)}</div>
-            <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.3rem;">${total_expense_amount:,.0f} total</div>
+            <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; 
+                        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);"></div>
+            <div style="position: relative; z-index: 2;">
+                <div style="font-size: 3rem; margin-bottom: 0.8rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">📊</div>
+                <div style="font-size: 1rem; opacity: 0.95; margin-bottom: 0.8rem; font-weight: 600; letter-spacing: 0.5px;">Expense Categories</div>
+                <div style="font-size: 2.2rem; font-weight: 800; margin-bottom: 0.3rem;">{len(expense_categories)}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9; font-weight: 500;">${total_expense_amount:,.0f} total</div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
     
     with col3:
         flow_efficiency = (total_expense_amount / total_income_amount * 100) if total_income_amount > 0 else 0
-        efficiency_color = "#2ECC71" if flow_efficiency < 80 else "#F39C12" if flow_efficiency < 95 else "#E74C3C"
+        efficiency_color = "#27AE60" if flow_efficiency < 80 else "#F39C12" if flow_efficiency < 95 else "#E74C3C"
+        efficiency_gradient = f"linear-gradient(135deg, {efficiency_color} 0%, {efficiency_color}E6 50%, {efficiency_color}CC 100%)"
         
         st.markdown(f"""
         <div style="
-            background: linear-gradient(135deg, {efficiency_color} 0%, {efficiency_color}CC 100%);
-            padding: 1.5rem;
-            border-radius: 12px;
+            background: {efficiency_gradient};
+            padding: 2rem;
+            border-radius: 16px;
             color: white;
             text-align: center;
-            box-shadow: 0 8px 32px rgba(46, 204, 113, 0.3);
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
+            box-shadow: 0 12px 40px rgba(39, 174, 96, 0.4);
+            border: 2px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(15px);
+            position: relative;
+            overflow: hidden;
         ">
-            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⚡</div>
-            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem; font-weight: 500;">Flow Efficiency</div>
-            <div style="font-size: 1.8rem; font-weight: bold;">{flow_efficiency:.0f}%</div>
-            <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.3rem;">of income allocated</div>
+            <div style="position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; 
+                        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);"></div>
+            <div style="position: relative; z-index: 2;">
+                <div style="font-size: 3rem; margin-bottom: 0.8rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">⚡</div>
+                <div style="font-size: 1rem; opacity: 0.95; margin-bottom: 0.8rem; font-weight: 600; letter-spacing: 0.5px;">Flow Efficiency</div>
+                <div style="font-size: 2.2rem; font-weight: 800; margin-bottom: 0.3rem;">{flow_efficiency:.0f}%</div>
+                <div style="font-size: 0.9rem; opacity: 0.9; font-weight: 500;">of income allocated</div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-# Rest of the file remains unchanged
 def show_enhanced_transaction_table(df, uploaded_files):
     """Enhanced transaction table with better filtering and modern styling"""
     st.markdown("### 📋 Transaction Explorer")
@@ -289,7 +354,7 @@ def show_enhanced_transaction_table(df, uploaded_files):
     
     st.markdown(f"""
     <div style="
-        background: linear-gradient(135deg, #2E8B8B 0%, #4A90E2 100%);
+        background: linear-gradient(135deg, {THEME_COLORS["midnight_green"]} 0%, {THEME_COLORS["lapis_lazuli"]} 100%);
         padding: 1rem;
         border-radius: 8px;
         color: white;
@@ -325,9 +390,9 @@ def show_enhanced_transaction_table(df, uploaded_files):
         expense_count = len(filtered_df[filtered_df['amount'] < 0])
         
         metrics = [
-            ("Total Amount", total_amount, "💰", "#4A90E2"),
-            ("Average Amount", avg_amount, "📊", "#2E8B8B"),
-            ("Income Transactions", income_count, "📈", "#2ECC71"),
+            ("Total Amount", total_amount, "💰", THEME_COLORS["lapis_lazuli"]),
+            ("Average Amount", avg_amount, "📊", THEME_COLORS["midnight_green"]),
+            ("Income Transactions", income_count, "📈", THEME_COLORS["pakistan_green"]),
             ("Expense Transactions", expense_count, "📉", "#FF6B6B")
         ]
         

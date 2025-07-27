@@ -3,6 +3,8 @@ from interfaces import main_ui
 from interfaces import review_ui
 from interfaces import rules_ui
 from interfaces import investment_tracker
+import base64
+
 
 # Enhanced global theme configuration with the specified color palette
 def apply_global_theme():
@@ -508,10 +510,14 @@ def apply_global_theme():
     </style>
     """, unsafe_allow_html=True)
 
+def image_to_base64(path):
+        with open(path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+
 def main():
     # Set page configuration
     st.set_page_config(
-        page_title="Smart Financial Analyzer",
+        page_title="Financial Analyzer",
         page_icon="💰",
         layout="wide",
         initial_sidebar_state="expanded"
@@ -523,6 +529,12 @@ def main():
     # Initialize session state
     if 'transactions_df' not in st.session_state:
         st.session_state['transactions_df'] = None
+
+    st.image("assets/profile.png", width=60)
+    st.markdown("""
+    <h1 style="color: black; margin: 0;">Vault Finance</h1>
+    """, unsafe_allow_html=True)
+
         
     # Enhanced tab layout with better icons and descriptions
     tab1, tab2, tab3, tab4 = st.tabs([

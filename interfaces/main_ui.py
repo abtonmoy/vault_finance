@@ -107,8 +107,8 @@ def show_welcome_screen():
     # Main header
     st.markdown("""
     <div class="gradient-header">
-        <h1 style="margin: 0;">💰 Smart Bank Statement Analyzer</h1>
-        <p style="margin: 0.5rem 0 0 0;">AI-powered transaction analysis with intelligent categorization and duplicate detection</p>
+        <h1 style="margin: 0;"> Personal Vault </h1>
+        <p style="margin: 0.5rem 0 0 0;">transaction analysis with auto categorization and duplicate detection</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -118,7 +118,7 @@ def show_welcome_screen():
     with col1:
         st.markdown("""
         <div class="feature-card">
-            <h3>🧠 AI Categorization</h3>
+            <h3>Algorithmic Categorization</h3>
             <p>Advanced machine learning automatically categorizes your transactions with high accuracy</p>
             <ul>
                 <li>Fuzzy merchant matching</li>
@@ -182,7 +182,7 @@ def show_welcome_screen():
         
         **3. 🚀 Upload and Analyze**
         - Upload your PDF files using the uploader
-        - Watch as AI processes and categorizes transactions
+        - Watch as algorithm processes and categorizes transactions
         - Explore interactive dashboards and insights
         
         **4. 📊 Export Results**
@@ -241,10 +241,10 @@ def show_processing_progress(uploaded_files):
     # Processing steps
     st.markdown("""
     <div style="text-align: center; margin: 2rem 0;">
-        <span class="progress-step">📖 Reading PDFs</span>
-        <span class="progress-step">🧠 AI Categorization</span>
-        <span class="progress-step">🔍 Duplicate Detection</span>
-        <span class="progress-step">📊 Analytics Generation</span>
+        <span class="progress-step"> Reading PDFs</span>
+        <span class="progress-step"> Auto Categorization</span>
+        <span class="progress-step"> Duplicate Detection</span>
+        <span class="progress-step"> Analytics Generation</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -291,12 +291,12 @@ def show_success_summary(df):
             """, unsafe_allow_html=True)
 
 def main_ui():
-    """Enhanced main UI function"""
+    """ main UI function"""
     
     # Set page config
     st.set_page_config(
-        page_title="Smart Bank Statement Analyzer",
-        page_icon="💰",
+        page_title="Vault Finances",
+        page_icon="assets/icon.png",
         layout="wide",
         initial_sidebar_state="expanded"
     )
@@ -331,7 +331,7 @@ def main_ui():
             """, unsafe_allow_html=True)
         
         # Process files
-        with st.spinner("🔄 Processing with AI-powered analysis..."):
+        with st.spinner("🔄 Processing..."):
             df = parse_pdf_statement(uploaded_files, dedup_config)
         
         if df is not None and not df.empty:

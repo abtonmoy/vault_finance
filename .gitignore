@@ -98,3 +98,4 @@ pylint-global.rc
 *.swp
 final/
 prev/
+data/
